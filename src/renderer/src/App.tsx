@@ -11,6 +11,7 @@ import { Dashboard } from './pages/Dashboard'
 import { FilesPage } from './pages/FilesPage'
 import { GodotPage } from './pages/GodotPage'
 import { HelpPage } from './pages/HelpPage'
+import { MapsPage } from './pages/MapsPage'
 import { ModulePage } from './pages/ModulePage'
 import { Onboarding } from './pages/Onboarding'
 import { ProjectDetail } from './pages/ProjectDetail'
@@ -136,6 +137,7 @@ function CurrentPage(): React.JSX.Element {
       if (route.moduleId === 'personagens') return <CharactersPage category="personagem" />
       if (route.moduleId === 'monstros') return <CharactersPage category="monstro" />
       if (route.moduleId === 'animacoes') return <AnimationsPage />
+      if (route.moduleId === 'mapas') return <MapsPage />
       return <ModulePage moduleId={route.moduleId} />
     case 'configuracoes':
       return <SettingsPage />

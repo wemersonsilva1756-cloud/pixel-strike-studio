@@ -4,13 +4,14 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1, 2, 3 e 4 de 10 concluídas e testadas.**
+> **Estado atual: Etapas 1 a 5 de 10 concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
-> transparentes e ficha JSON e monta **animações com linha do tempo, FPS e
-> spritesheet**. Os editores de mapas, armas e o assistente de IA **ainda não
-> existem** — cada item tem sua etapa e a interface diz isso claramente, sem botões
-> que não funcionam.
+> transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
+> spritesheet** e desenha **mapas com tiles, colisão, áreas e spawns** já com
+> TileSet, TileMapLayer e cena prontos para a Godot. Os editores de armas, itens,
+> efeitos e o assistente de IA **ainda não existem** — cada item tem sua etapa e a
+> interface diz isso claramente, sem botões que não funcionam.
 >
 > O gerador da etapa 3 é **procedural e determinístico**, não é IA: a descrição é
 > interpretada por palavras-chave. Os provedores de IA chegam na etapa 9.
@@ -36,6 +37,11 @@ para quem está começando.
 | Linha do tempo com reordenar, duplicar, excluir e espera por quadro | Funcionando |
 | FPS, repetição e pré-visualização em tempo real | Funcionando |
 | Spritesheet horizontal e ficha JSON por animação | Funcionando |
+| Desenhar mapas com pincel, borracha e camada de colisão | Funcionando |
+| Áreas segura, PvP, inimigos, objetivo e secreta desenhadas na grade | Funcionando |
+| Spawns de jogador, inimigo e item posicionados no mapa | Funcionando |
+| Proposta de mapa gerada pela descrição, sempre editável | Funcionando |
+| TileSet, TileMapLayer, colisões e spawns gerados para a Godot 4 | Funcionando |
 | Exportar para a Godot com prévia e backup dos substituídos | Funcionando |
 | Banco de dados local SQLite | Funcionando |
 | Backups completos com restauração | Funcionando |
@@ -43,8 +49,8 @@ para quem está começando.
 | Histórico de ações | Funcionando |
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
-| Geradores de mapas, armas, skills, itens e efeitos | Etapas 5 a 8 |
-| Exportar cenas e TileMaps gerados pelos módulos | Junto com as etapas 5 a 8 |
+| Geradores de armas, skills, itens e efeitos | Etapas 6 a 8 |
+| Exportar cenas geradas pelos módulos restantes | Junto com as etapas 6 a 8 |
 | Geração com inteligência artificial de verdade | Etapa 9 |
 | Provedores de IA e assistente central | Etapa 9 |
 | Instalador para Windows e sistema de atualização | Etapa 10 |
@@ -158,6 +164,40 @@ Nada aqui é simulado: os quadros são desenhados pelo mesmo motor procedural do
 sprites, com poses diferentes por tipo de animação. A importação de uma spritesheet
 externa ainda **não** existe — está prevista para a etapa 10, junto do polimento.
 
+### Construtor de mapas
+
+Menu **Construtor de Mapas**. Passo a passo:
+
+1. Escreva o **nome** e uma **descrição** (por exemplo, “arena militar abandonada
+   com pátio central”). A descrição escolhe o tema e orienta a proposta.
+2. Ajuste **largura, altura, tamanho do tile e semente** e clique em **Gerar
+   proposta**. O mapa é gerado na hora e fica totalmente editável.
+3. Escolha a ferramenta e trabalhe na grade:
+   - **Pincel**: pinta o tile selecionado (arraste para pintar vários).
+   - **Borracha**: apaga o tile e libera a colisão.
+   - **Colisão**: liga/desliga o bloqueio da célula.
+   - **Zona**: clique e arraste para desenhar uma área (segura, PvP, inimigos,
+     objetivo ou secreta).
+   - **Spawn**: clique para posicionar jogador, inimigo ou item.
+4. Acompanhe a **imagem renderizada** e o **atlas de tiles** — é exatamente o que a
+   Godot recebe.
+5. Clique em **Salvar no projeto**.
+
+Cada mapa grava em `mapas/<nome>/`:
+
+```
+arena-do-deserto/
+  mapa.png                            ← mapa inteiro renderizado
+  tileset.png                         ← atlas com um tile de cada tipo
+  mapa.json                           ← grade, colisão, áreas, spawns e tamanho
+  arena-do-deserto.gd                 ← monta TileMapLayer, colisões, áreas e spawns
+  arena-do-deserto.tscn               ← cena pronta para abrir na Godot
+```
+
+Nada disso é simulado: a imagem é desenhada pelo mesmo motor do Studio e o script
+extrai do `mapa.json` os mesmos dados que você vê na tela. O que ainda **não**
+existe é importar um mapa de fora ou pintar com uma imagem de tileset própria.
+
 ### Gerenciador de arquivos
 
 Menu **Arquivos do projeto**. Você navega pelas pastas, vê imagens como sprites (com
@@ -192,9 +232,10 @@ O que a exportação grava hoje:
 | `pixel_strike/recursos/personagens/...` | Sprites PNG e fichas JSON dos personagens gerados |
 | `pixel_strike/recursos/monstros/...` | Sprites PNG e fichas JSON dos monstros gerados |
 | `pixel_strike/recursos/animacoes/...` | Quadros PNG, spritesheets e fichas JSON das animações |
+| `pixel_strike/recursos/mapas/...` | Imagem, atlas, dados, script e cena de cada mapa |
 
-Tudo o que o gerador da etapa 3 cria entra na exportação automaticamente — não é
-preciso copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
+Tudo o que os geradores criam entra na exportação automaticamente — não é preciso
+copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
 configurações que você criou na Godot.
 
 Opcionalmente, em Configurações, você pode apontar o executável da Godot apenas para
@@ -216,18 +257,18 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 139 verificações: banco, projetos, arquivos, Godot, sprites e animações
+npm run test:core   # 169 verificações: banco, projetos, arquivos, Godot, sprites, animações e mapas
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
 O `smoke` é um teste real de integração em duas fases: cria um projeto em pasta
-temporária, faz backup, testa o gerenciador de arquivos, gera um sprite e uma animação,
-confere o estado inicial da Godot, **recarrega a janela** (simulando reiniciar o app),
-confere que o projeto continua aberto, abre as páginas de arquivos, personagens e
-animações pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
+temporária, faz backup, testa o gerenciador de arquivos, gera um sprite, uma animação e
+um mapa, confere o estado inicial da Godot, **recarrega a janela** (simulando reiniciar
+o app), confere que o projeto continua aberto, abre as páginas de arquivos,
+personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 139/139 verificações do
+Resultado da última execução desta versão: **typecheck OK, 169/169 verificações do
 núcleo, build OK, smoke OK**.
 
 ---
@@ -245,6 +286,7 @@ src/
       characters.ts     gerar, salvar, listar e remover personagens/monstros
       sprites.ts        desenho em pixel art (grade 32, poses e quatro direções)
       animations.ts     quadros, spritesheet, ficha e remoção de animações
+      maps.ts           mapas, colisões, áreas, spawns e arquivos da Godot
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -295,10 +337,9 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ## Próxima etapa
 
-**Etapa 4 — Editor de sprites e animações:** linha do tempo, corte automático de
-spritesheets, reordenação de quadros, FPS, loop, pré-visualização em tempo real e as
-animações padrão (idle, walk, run, attack, shoot, reload, death, hit, heal, skills)
-exportadas junto do personagem.
+**Etapa 6 — Armas, skins e equipamentos:** armas base, skins com cores e padrões,
+raridade separada da condição de desgaste, ícones, efeitos de disparo e variações da
+mesma arma lado a lado.
 
-Nada da Etapa 4 começará antes de as etapas 1 a 3 estarem estáveis — e elas estão
+Nada da Etapa 6 começa antes de as etapas 1 a 5 estarem estáveis — e elas estão
 testadas nesta versão.

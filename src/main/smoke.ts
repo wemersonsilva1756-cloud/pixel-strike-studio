@@ -32,7 +32,10 @@ const PHASE_ONE = `(async () => {
     spriteSalvo: false,
     animQuadros: 0,
     animFolha: false,
-    animSalva: false
+    animSalva: false,
+    mapaImagem: false,
+    mapaZonas: 0,
+    mapaSalvo: false
   }
 
   try {
@@ -100,6 +103,21 @@ const PHASE_ONE = `(async () => {
     await window.studio.animations.save(created.id, animConfig)
     info.animSalva = (await window.studio.animations.list(created.id)).length === 1
 
+    const proposta = await window.studio.maps.propose({
+      name: 'Mapa de teste',
+      description: 'arena militar abandonada com pátio central',
+      themeId: 'auto',
+      width: 24,
+      height: 16,
+      tileSize: 16,
+      seed: 3
+    })
+    const mapaPreview = await window.studio.maps.preview(proposta)
+    info.mapaImagem = String(mapaPreview.image).startsWith('data:image/png;base64,')
+    info.mapaZonas = proposta.zones.length
+    await window.studio.maps.save(created.id, proposta)
+    info.mapaSalvo = (await window.studio.maps.list(created.id)).length === 1
+
     await window.studio.settings.update({ onboardingDone: true })
   } catch (error) {
     info.error = String(error && error.message ? error.message : error)
@@ -121,6 +139,7 @@ function phaseTwoScript(projectId: string): string {
       characterPage: false,
       spriteImages: 0,
       animationPage: false,
+      mapPage: false,
       removed: false
     }
 
@@ -168,6 +187,15 @@ function phaseTwoScript(projectId: string): string {
     const animText = document.body.innerText
     info.animationPage =
       animText.includes('Linha do tempo') && animText.includes('Animações salvas')
+
+    const mapNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Construtor de Mapas'
+    )
+    mapNav?.click()
+    await esperar(2200)
+    const mapText = document.body.innerText
+    info.mapPage =
+      mapText.includes('Grade do mapa') && mapText.includes('Mapas salvos')
 
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
@@ -218,6 +246,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (phaseOne['animQuadros'] !== 6 || !phaseOne['animFolha'] || !phaseOne['animSalva']) {
     return { ok: false, detail: `editor de animações falhou: ${JSON.stringify(phaseOne)}` }
   }
+  if (!phaseOne['mapaImagem'] || (phaseOne['mapaZonas'] as number) < 3 || !phaseOne['mapaSalvo']) {
+    return { ok: false, detail: `construtor de mapas falhou: ${JSON.stringify(phaseOne)}` }
+  }
 
   const projectId = String(phaseOne['createdId'])
 
@@ -253,6 +284,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseTwo['animationPage']) {
     return { ok: false, detail: `a página de animações não abriu: ${JSON.stringify(phaseTwo)}` }
   }
+  if (!phaseTwo['mapPage']) {
+    return { ok: false, detail: `a página de mapas não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
   if (!phaseTwo['removed']) {
     return {
       ok: false,
@@ -264,7 +298,7 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
     ok: true,
     detail:
       `interface renderizada (${phaseOne['chars']} caracteres), projeto criado em ` +
-      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações e Godot ` +
+      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas e Godot ` +
       `respondendo, banco em ${phaseOne['dbPath']}`
   }
 }

@@ -23,7 +23,14 @@ import {
   backupProject,
   buildGodotExportPlan,
   listAnimations,
+  listMaps,
+  loadMap,
   previewAnimation,
+  previewMap,
+  proposeMapConfig,
+  removeMap,
+  saveMap,
+  validateMapConfig,
   removeAnimation,
   saveAnimation,
   validateAnimationConfig,
@@ -60,6 +67,7 @@ import {
   updateSettings
 } from '../src/main/core/index'
 import { defaultSpec } from '../src/shared/characters'
+import { proposeMap } from '../src/shared/maps'
 
 const root = mkdtempSync(join(tmpdir(), 'pixel-strike-test-'))
 const dataDir = join(root, 'dados')
@@ -612,6 +620,146 @@ async function main(): Promise<void> {
     existsSync(join(dataDir, 'lixeira')) &&
       readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('soldado-alfa')),
     'sprites removidos vão para a lixeira interna'
+  )
+
+  // --- Construtor de mapas (etapa 5) --------------------------------------
+  const draft = {
+    name: 'Arena do Deserto',
+    description: 'arena militar abandonada no deserto',
+    themeId: 'auto',
+    width: 24,
+    height: 16,
+    tileSize: 16,
+    seed: 11
+  }
+
+  const proposal = proposeMap(draft)
+  ok(proposal.width === 24 && proposal.height === 16, 'proposta respeita o tamanho pedido')
+  ok(proposal.tiles.length === 24 * 16, 'proposta preenche todas as células')
+  ok(proposal.themeId === 'deserto', 'tema é detectado pela descrição')
+  ok(proposal.zones.length >= 4 && proposal.spawns.length >= 4, 'proposta cria áreas e spawns')
+  ok(
+    proposal.zones.every(
+      (zone) => zone.x + zone.w <= proposal.width && zone.y + zone.h <= proposal.height
+    ),
+    'áreas ficam dentro do mapa'
+  )
+  ok(
+    proposal.collision.some(Boolean) && proposal.collision.some((blocked) => !blocked),
+    'mapa mistura piso livre e bloqueado'
+  )
+
+  const proposalAgain = proposeMap(draft)
+  ok(
+    JSON.stringify(proposalAgain.tiles) === JSON.stringify(proposal.tiles),
+    'mesma semente gera o mesmo terreno'
+  )
+  ok(proposeMap({ ...draft, themeId: 'neve' }).themeId === 'neve', 'tema escolhido é respeitado')
+
+  const mapPreview = await previewMap(proposal)
+  ok(mapPreview.image.startsWith('data:image/png;base64,'), 'prévia do mapa vira imagem')
+  const mapPng = pngInfo(Buffer.from(mapPreview.image.split(',')[1] ?? '', 'base64'))
+  ok(
+    mapPng.width === 24 * 16 && mapPng.height === 16 * 16 && mapPng.colorType === 6,
+    'imagem do mapa tem o tamanho calculado e transparência'
+  )
+  const atlasPng = pngInfo(Buffer.from(mapPreview.tileset.split(',')[1] ?? '', 'base64'))
+  ok(atlasPng.width === 8 * 16 && atlasPng.height === 16, 'atlas traz um tile por tipo')
+
+  assert.throws(() => validateMapConfig({ ...proposal, name: 'a' }), /pelo menos 2/)
+  checks += 1
+  console.log('  ok  nome curto é recusado no construtor de mapas')
+  assert.throws(() => validateMapConfig({ ...proposal, width: 4 }), /entre 8 e 64/)
+  checks += 1
+  console.log('  ok  mapa pequeno demais é recusado')
+
+  const clampedMap = validateMapConfig({
+    ...proposal,
+    zones: [{ id: 'z', kind: 'pvp', name: 'Zona', x: 20, y: 14, w: 10, h: 10 }],
+    spawns: [{ id: 's', kind: 'jogador', name: 'Spawn', x: 500, y: 500 }]
+  })
+  ok(clampedMap.zones[0]?.x === 14 && clampedMap.zones[0]?.w === 10, 'área fora do mapa é encaixada')
+  ok(clampedMap.spawns[0]?.x === 23 && clampedMap.spawns[0]?.y === 15, 'spawn fora do mapa é encaixado')
+
+  const savedMap = await saveMap(project.id, proposal)
+  ok(
+    existsSync(join(project.path, 'mapas', 'arena-do-deserto', 'mapa.png')),
+    'imagem do mapa salva na pasta mapas/'
+  )
+  ok(
+    existsSync(join(project.path, 'mapas', 'arena-do-deserto', 'tileset.png')),
+    'atlas de tiles salvo junto do mapa'
+  )
+  ok(
+    existsSync(join(project.path, 'mapas', 'arena-do-deserto', 'arena-do-deserto.gd')),
+    'script da Godot gerado com o mapa'
+  )
+  ok(
+    existsSync(join(project.path, 'mapas', 'arena-do-deserto', 'arena-do-deserto.tscn')),
+    'cena pronta para abrir na Godot'
+  )
+
+  const mapData = JSON.parse(
+    readFileSync(join(project.path, 'mapas', 'arena-do-deserto', 'mapa.json'), 'utf8')
+  ) as {
+    largura: number
+    altura: number
+    tiles: string[]
+    colisao: number[]
+    blocos: unknown[]
+    zonas: unknown[]
+    spawns: unknown[]
+  }
+  ok(mapData.largura === 24 && mapData.tiles.length === 384, 'mapa.json guarda a grade completa')
+  ok(
+    mapData.blocos.length > 0 && mapData.zonas.length === proposal.zones.length,
+    'mapa.json guarda colisões agrupadas e áreas'
+  )
+
+  const mapScriptText = readFileSync(
+    join(project.path, 'mapas', 'arena-do-deserto', 'arena-do-deserto.gd'),
+    'utf8'
+  )
+  ok(
+    mapScriptText.includes('TileMapLayer') && mapScriptText.includes('TileSetAtlasSource'),
+    'script monta o TileMapLayer de verdade'
+  )
+  ok(
+    mapScriptText.includes('Area2D') && mapScriptText.includes('Marker2D'),
+    'script cria áreas e pontos de spawn'
+  )
+
+  ok((await listMaps(project.id)).length === 1, 'mapa aparece na lista do projeto')
+  const loadedMap = await loadMap(savedMap.id)
+  ok(
+    loadedMap.width === 24 && loadedMap.tiles.length === 384 && loadedMap.name === 'Arena do Deserto',
+    'mapa salvo pode ser reaberto para edição'
+  )
+
+  const planWithMaps = await buildGodotExportPlan(project.id)
+  ok(
+    planWithMaps.files.some(
+      (file) => file.relativePath === 'pixel_strike/recursos/mapas/arena-do-deserto/mapa.png'
+    ),
+    'mapa entra na exportação da Godot'
+  )
+
+  const mapExport = await applyGodotExport(project.id)
+  ok(
+    mapExport.written >= 1 &&
+      existsSync(join(godotDir, 'pixel_strike', 'recursos', 'mapas', 'arena-do-deserto', 'mapa.png')),
+    'exportação copia o mapa para a Godot'
+  )
+
+  await removeMap(savedMap.id)
+  ok((await listMaps(project.id)).length === 0, 'mapa removido sai da lista')
+  ok(
+    !existsSync(join(project.path, 'mapas', 'arena-do-deserto')),
+    'pasta do mapa sai do projeto'
+  )
+  ok(
+    readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('arena-do-deserto')),
+    'mapa removido vai para a lixeira interna'
   )
 
   // --- Remoção segura -----------------------------------------------------

@@ -5,6 +5,7 @@ import { configureProjects } from './projects'
 import { configureGodot } from './godot'
 import { configureCharacters } from './characters'
 import { configureAnimations } from './animations'
+import { configureMaps } from './maps'
 import { ensureDir } from './filesystem'
 
 export * from './database'
@@ -21,6 +22,7 @@ export * from './png'
 export * from './sprites'
 export * from './characters'
 export * from './animations'
+export * from './maps'
 
 /**
  * Inicializa o núcleo local (banco de dados + serviços).
@@ -53,6 +55,7 @@ export async function initializeCore(options: CoreOptions): Promise<void> {
   configureGodot({ studioVersion: options.studioVersion })
   configureCharacters({ trashDir })
   configureAnimations({ trashDir })
+  configureMaps({ trashDir })
 
   initialized = true
 }

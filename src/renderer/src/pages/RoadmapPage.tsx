@@ -50,8 +50,10 @@ const STAGES: Stage[] = [
     number: 5,
     title: 'Construtor de mapas',
     description:
-      'Grade e tiles, camadas, colisões, áreas seguras e PvP, spawns, NPCs e propostas de mapa geradas por descrição, sempre editáveis.',
-    deliverable: 'Mapas editáveis exportados como TileSet e TileMap para Godot 4.'
+      'Grade e tiles, camadas, colisões, áreas seguras e PvP, spawns e propostas de mapa geradas por descrição, sempre editáveis.',
+    deliverable:
+      'Entregue nesta versão: pincel, borracha, colisão, áreas e spawns na grade, mapa renderizado e exportação com atlas, TileSet, TileMapLayer, colisões e cenas para a Godot 4. NPCs posicionáveis ficam para o polimento da etapa 10.',
+    done: true
   },
   {
     number: 6,

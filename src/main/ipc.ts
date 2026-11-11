@@ -2,11 +2,18 @@ import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC, type IpcResult, type StudioPaths, type StudioSettings } from '@shared/contract'
 import type { AnimationConfig } from '@shared/animations'
+import type { MapConfig, MapDraft } from '@shared/maps'
 import {
   applyGodotExport,
   backupProject,
   listAnimations,
+  listMaps,
+  loadMap,
   previewAnimation,
+  previewMap,
+  proposeMapConfig,
+  removeMap,
+  saveMap,
   removeAnimation,
   saveAnimation,
   buildGodotExportPlan,
@@ -414,6 +421,31 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
 
   handle<null>(IPC.animationsRemove, async (assetId) => {
     await removeAnimation(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  // ------------------------------------------------------- construtor de mapas
+  handle(IPC.mapsPropose, async (draft) => {
+    if (draft && typeof draft !== 'object') throw new Error('Dados do mapa inválidos.')
+    return proposeMapConfig((draft ?? {}) as Partial<MapDraft>)
+  })
+
+  handle(IPC.mapsPreview, async (config) => {
+    if (!config || typeof config !== 'object') throw new Error('Dados do mapa inválidos.')
+    return previewMap(config as MapConfig)
+  })
+
+  handle(IPC.mapsSave, async (projectId, config) => {
+    if (!config || typeof config !== 'object') throw new Error('Dados do mapa inválidos.')
+    return saveMap(requireString(projectId, 'projectId'), config as MapConfig)
+  })
+
+  handle(IPC.mapsList, async (projectId) => listMaps(requireString(projectId, 'projectId')))
+
+  handle(IPC.mapsLoad, async (assetId) => loadMap(requireString(assetId, 'assetId')))
+
+  handle<null>(IPC.mapsRemove, async (assetId) => {
+    await removeMap(requireString(assetId, 'assetId'))
     return null
   })
 }

@@ -130,14 +130,15 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Construtor de Mapas',
     stage: 5,
     icon: Map,
+    available: true,
     summary:
-      'Editor de mapas com tiles, camadas, colisões, áreas seguras, PvP, spawns e exportação para TileMap da Godot.',
+      'Pinte o terreno, marque colisões, desenhe áreas seguras, PvP, inimigos, objetivo e secreta, posicione spawns e exporte TileSet, TileMap e cena para a Godot 4.',
     planned: [
-      'Grade e tiles configuráveis, pintura de terreno',
-      'Camadas de fundo, objetos e colisão',
-      'Áreas seguras, áreas PvP, spawns e áreas secretas',
+      'Grade e tiles configuráveis, pintura de terreno com arrastar',
+      'Camada de colisão editável célula por célula',
+      'Áreas seguras, PvP, inimigos, objetivo e secretas desenhadas como retângulos',
       'Proposta de mapa gerada por descrição, sempre editável',
-      'Exportação para TileSet e TileMap do Godot 4'
+      'TileSet, TileMapLayer, colisões e spawns gerados para a Godot 4'
     ]
   },
   {

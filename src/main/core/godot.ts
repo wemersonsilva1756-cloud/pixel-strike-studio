@@ -526,13 +526,13 @@ function collectResourceFiles(studioProjectPath: string, warnings: string[]): Co
   const files: CollectedFile[] = []
 
   collectFolderFiles(join(studioProjectPath, 'godot'), RESOURCE_ROOT, files)
-  for (const folder of ['personagens', 'monstros', 'animacoes']) {
+  for (const folder of ['personagens', 'monstros', 'animacoes', 'mapas']) {
     collectFolderFiles(join(studioProjectPath, folder), `${RESOURCE_ROOT}/${folder}`, files)
   }
 
   if (files.length === 0) {
     warnings.push(
-      'Nenhum recurso encontrado: as pastas godot/, personagens/, monstros/ e animacoes/ estão vazias. Apenas a preparação (script, manifesto e instruções) será enviada.'
+      'Nenhum recurso encontrado: as pastas godot/, personagens/, monstros/, animacoes/ e mapas/ estão vazias. Apenas a preparação (script, manifesto e instruções) será enviada.'
     )
   }
 
@@ -773,7 +773,7 @@ async function rebuildFileContent(input: {
 
   const stripped = relativePath.replace(`${RESOURCE_ROOT}/`, '')
   // Recursos gerados ficam em personagens/ e monstros/; o resto vem de godot/.
-  const fromProject = ['personagens/', 'monstros/', 'animacoes/'].some((prefix) =>
+  const fromProject = ['personagens/', 'monstros/', 'animacoes/', 'mapas/'].some((prefix) =>
     stripped.startsWith(prefix)
   )
   const source = fromProject ? join(project.path, stripped) : join(project.path, 'godot', stripped)

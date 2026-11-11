@@ -7,6 +7,7 @@ import type {
   DescriptionSuggestion
 } from '@shared/characters'
 import type { AnimationAsset, AnimationConfig, AnimationPreview } from '@shared/animations'
+import type { MapAsset, MapConfig, MapDraft, MapPreview } from '@shared/maps'
 import {
   IPC,
   type ActivityEntry,
@@ -112,6 +113,15 @@ const api: StudioApi = {
       invoke<AnimationAsset>(IPC.animationsSave, projectId, config),
     list: (projectId: string) => invoke<AnimationAsset[]>(IPC.animationsList, projectId),
     remove: (assetId: string) => invoke<void>(IPC.animationsRemove, assetId)
+  },
+  maps: {
+    propose: (draft: Partial<MapDraft>) => invoke<MapConfig>(IPC.mapsPropose, draft),
+    preview: (config: MapConfig) => invoke<MapPreview>(IPC.mapsPreview, config),
+    save: (projectId: string, config: MapConfig) =>
+      invoke<MapAsset>(IPC.mapsSave, projectId, config),
+    list: (projectId: string) => invoke<MapAsset[]>(IPC.mapsList, projectId),
+    load: (assetId: string) => invoke<MapConfig>(IPC.mapsLoad, assetId),
+    remove: (assetId: string) => invoke<void>(IPC.mapsRemove, assetId)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),

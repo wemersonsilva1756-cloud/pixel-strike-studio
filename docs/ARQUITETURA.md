@@ -46,6 +46,8 @@ Regras que sustentam essa divisão:
 | `src/main/core/characters.ts` | Serviço de personagens/monstros: validação, gravação, lista e remoção |
 | `src/main/core/sprites.ts` | Desenho procedural em pixel art (grade 32, poses, quatro direções, contorno) |
 | `src/main/core/animations.ts` | Quadros, spritesheet, ficha JSON, lista e remoção de animações |
+| `src/main/core/maps.ts` | Validação, renderização, gravação e leitura de mapas, atlas e cena para a Godot |
+| `src/shared/maps.ts` | Tiles, temas, zonas, spawns e geração determinística de proposta de mapa |
 | `src/main/core/png.ts` | Codificador PNG RGBA com `zlib` (sem dependências externas) |
 | `src/main/smoke.ts` | Teste automático em duas fases (com recarga da janela) |
 | `src/main/core/settings-store.ts` | Preferências em tabela chave/valor |
@@ -96,6 +98,11 @@ arbitrário da interface: o núcleo sempre resolve os caminhos a partir do banco
 | `studio:animations:preview` | quadros e spritesheet em memória, sem gravar nada |
 | `studio:animations:save` | grava PNGs, `_sheet.png` e ficha JSON, registrando em `assets` |
 | `studio:animations:list` / `remove` | lista animações e move a pasta para a lixeira |
+| `studio:maps:propose` | proposta de mapa determinística a partir da descrição e da semente |
+| `studio:maps:preview` | imagem do mapa e atlas de tiles em memória, sem gravar nada |
+| `studio:maps:save` | grava `mapa.png`, `tileset.png`, `mapa.json`, `.gd` e `.tscn` em `mapas/` |
+| `studio:maps:list` / `load` | lista os mapas e devolve um mapa salvo para edição |
+| `studio:maps:remove` | move a pasta do mapa para a lixeira interna |
 | `studio:event:progress` | evento (main → renderer) de operações longas |
 
 `studio:app:smoke-ready` é o único canal `send` (sem resposta), usado pelo teste
@@ -263,6 +270,29 @@ sprites, com uma pose diferente.
 O FPS, a repetição e a espera de cada quadro vêm da ficha JSON, então o runtime do
 jogo não precisa adivinhar a velocidade da animação.
 
+## Construtor de mapas (etapa 5)
+
+O mapa é uma grade de tiles com dados que a Godot entende de verdade.
+
+- `src/shared/maps.ts` define os 8 tipos de tile, 5 temas com paleta e peso de
+  geração, 5 tipos de área (`segura`, `pvp`, `inimigo`, `objetivo`, `secreta`),
+  3 tipos de spawn e o gerador `proposeMap(draft)` — ruído suave determinístico
+  pela semente, mais borda de parede, estradas em cruz, lago e pontos de spawn em
+  piso livre.
+- `maps.ts` valida tudo (nome 2–60, grade 8–64 por lado, tile 8–32 px, imagem de até
+  2048 px por lado, coleção de tiles e de colisão sempre do tamanho da grade, áreas
+  e spawns encaixados dentro do mapa) e desenha os pixels: cada tile tem detalhe
+  próprio (tufos, pedrinhas, ondas, tijolos, tábuas) derivado da posição, então o
+  mesmo mapa gera sempre a mesma imagem.
+- Gravação em `mapas/<slug>/`: `mapa.png`, `tileset.png` (atlas horizontal com um
+  tile por tipo), `mapa.json` (grade, colisão agrupada em blocos, áreas, spawns e
+  tamanho), `<slug>.gd` e `<slug>.tscn`.
+- O script gerado usa `TileSetAtlasSource` + `TileMapLayer` e cria `StaticBody2D`
+  com um `CollisionShape2D` por bloco, `Area2D` por área (tipo nos metadados) e
+  `Marker2D` por spawn. Não é preciso converter nada à mão na Godot.
+- A exportação para a Godot passou a copiar também `mapas/` para
+  `pixel_strike/recursos/`.
+
 ## Teste automático do Electron (`npm run smoke`)
 
 Executa o app compilado com `--smoke-test`:
@@ -272,12 +302,13 @@ Executa o app compilado com `--smoke-test`:
 - espera a interface renderizar e o aviso `studio:app:smoke-ready` (executado uma
   única vez, mesmo que a interface avise mais de uma vez);
 - **fase 1**: cria um projeto, faz backup, lista a raiz, cria uma pasta, lê o
-  `projeto.json`, consulta o estado inicial da Godot, gera um sprite (prévia + save) e
-  monta uma animação de 6 quadros com spritesheet (prévia + save);
+  `projeto.json`, consulta o estado inicial da Godot, gera um sprite (prévia + save),
+  monta uma animação de 6 quadros com spritesheet (prévia + save) e propõe, renderiza
+  e salva um mapa de 24×16 tiles;
 - recarrega a janela, como um reinício, e **fase 2**: confirma que o app abriu no
-  painel, abre as páginas de arquivos, Godot, personagens e animações pelo menu,
-  verifica que as pastas, os sprites e a linha do tempo aparecem e remove o projeto
-  pela lixeira;
+  painel, abre as páginas de arquivos, Godot, personagens, animações e mapas pelo
+  menu, verifica que as pastas, os sprites, a linha do tempo e a grade do mapa
+  aparecem e remove o projeto pela lixeira;
 - encerra com código 0 apenas se tudo responder como esperado, e imprime um resumo.
 
 Isso cobre de uma vez: preload, IPC, validações, SQLite, sistema de arquivos, React e

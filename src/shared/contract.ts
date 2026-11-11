@@ -6,6 +6,7 @@ import type {
   DescriptionSuggestion
 } from './characters'
 import type { AnimationAsset, AnimationConfig, AnimationPreview } from './animations'
+import type { MapAsset, MapConfig, MapDraft, MapPreview } from './maps'
 
 /**
  * Contrato compartilhado entre o processo principal (Node) e a interface (React).
@@ -266,6 +267,14 @@ export interface StudioApi {
     list(projectId: string): Promise<AnimationAsset[]>
     remove(assetId: string): Promise<void>
   }
+  maps: {
+    propose(draft: Partial<MapDraft>): Promise<MapConfig>
+    preview(config: MapConfig): Promise<MapPreview>
+    save(projectId: string, config: MapConfig): Promise<MapAsset>
+    list(projectId: string): Promise<MapAsset[]>
+    load(assetId: string): Promise<MapConfig>
+    remove(assetId: string): Promise<void>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -323,5 +332,11 @@ export const IPC = {
   animationsSave: 'studio:animations:save',
   animationsList: 'studio:animations:list',
   animationsRemove: 'studio:animations:remove',
+  mapsPropose: 'studio:maps:propose',
+  mapsPreview: 'studio:maps:preview',
+  mapsSave: 'studio:maps:save',
+  mapsList: 'studio:maps:list',
+  mapsLoad: 'studio:maps:load',
+  mapsRemove: 'studio:maps:remove',
   eventProgress: 'studio:event:progress'
 } as const
