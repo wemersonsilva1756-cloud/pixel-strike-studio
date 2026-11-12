@@ -297,6 +297,25 @@ export function Dashboard(): React.JSX.Element {
                 </Button>
               </div>
             </li>
+            <li className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-ink-100">Etapa 6 · Armas e skins</p>
+                <Badge tone="success">Concluída</Badge>
+              </div>
+              <p className="mt-1 text-xs text-ink-400">
+                Nove modelos base com padrões, cores, raridade separada da condição de desgaste,
+                ícone pixel art e comparação das seis raridades.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate({ name: 'modulo', moduleId: 'armas' })}
+                >
+                  Abrir editor de skins
+                </Button>
+              </div>
+            </li>
             {nextModules.map((module) => {
               const Icon = module.icon
               return (

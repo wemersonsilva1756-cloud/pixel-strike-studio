@@ -7,6 +7,13 @@ import type {
 } from './characters'
 import type { AnimationAsset, AnimationConfig, AnimationPreview } from './animations'
 import type { MapAsset, MapConfig, MapDraft, MapPreview } from './maps'
+import type {
+  WeaponAsset,
+  WeaponComparison,
+  WeaponPreview,
+  WeaponSpec,
+  WeaponSuggestion
+} from './weapons'
 
 /**
  * Contrato compartilhado entre o processo principal (Node) e a interface (React).
@@ -275,6 +282,14 @@ export interface StudioApi {
     load(assetId: string): Promise<MapConfig>
     remove(assetId: string): Promise<void>
   }
+  weapons: {
+    preview(spec: WeaponSpec): Promise<WeaponPreview>
+    compare(spec: WeaponSpec): Promise<WeaponComparison>
+    interpret(description: string): Promise<WeaponSuggestion>
+    save(projectId: string, spec: WeaponSpec): Promise<WeaponAsset>
+    list(projectId: string): Promise<WeaponAsset[]>
+    remove(assetId: string): Promise<void>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -338,5 +353,11 @@ export const IPC = {
   mapsList: 'studio:maps:list',
   mapsLoad: 'studio:maps:load',
   mapsRemove: 'studio:maps:remove',
+  weaponsPreview: 'studio:weapons:preview',
+  weaponsCompare: 'studio:weapons:compare',
+  weaponsInterpret: 'studio:weapons:interpret',
+  weaponsSave: 'studio:weapons:save',
+  weaponsList: 'studio:weapons:list',
+  weaponsRemove: 'studio:weapons:remove',
   eventProgress: 'studio:event:progress'
 } as const

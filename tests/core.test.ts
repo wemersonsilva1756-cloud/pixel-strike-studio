@@ -22,15 +22,21 @@ import {
   applyGodotExport,
   backupProject,
   buildGodotExportPlan,
+  compareWeapon,
   listAnimations,
   listMaps,
+  listWeapons,
   loadMap,
   previewAnimation,
   previewMap,
+  previewWeapon,
   proposeMapConfig,
   removeMap,
+  removeWeapon,
   saveMap,
+  saveWeapon,
   validateMapConfig,
+  validateWeaponSpec,
   removeAnimation,
   saveAnimation,
   validateAnimationConfig,
@@ -68,6 +74,7 @@ import {
 } from '../src/main/core/index'
 import { defaultSpec } from '../src/shared/characters'
 import { proposeMap } from '../src/shared/maps'
+import { defaultColors, interpretWeapon, wearForFloat } from '../src/shared/weapons'
 
 const root = mkdtempSync(join(tmpdir(), 'pixel-strike-test-'))
 const dataDir = join(root, 'dados')
@@ -760,6 +767,140 @@ async function main(): Promise<void> {
   ok(
     readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('arena-do-deserto')),
     'mapa removido vai para a lixeira interna'
+  )
+
+  // --- Armas e skins (etapa 6) -------------------------------------------
+  const weaponSpec = {
+    baseId: 'ak47',
+    name: 'AK Dourada',
+    rarity: 'dourado' as const,
+    wear: 'nova' as const,
+    float: 0.05,
+    pattern: 'chamas' as const,
+    colors: { primaria: '#ffb020', secundaria: '#7c2d12' },
+    seed: 9,
+    size: 64 as const
+  }
+
+  const weaponPreview = await previewWeapon(weaponSpec)
+  ok(weaponPreview.icon.startsWith('data:image/png;base64,'), 'prévia da skin vira imagem')
+  const weaponPng = pngInfo(Buffer.from(weaponPreview.icon.split(',')[1] ?? '', 'base64'))
+  ok(
+    weaponPng.width === 64 && weaponPng.height === 64 && weaponPng.colorType === 6,
+    'ícone sai no tamanho escolhido com transparência'
+  )
+
+  const weaponAgain = await previewWeapon(weaponSpec)
+  ok(weaponAgain.icon === weaponPreview.icon, 'mesma semente e cores geram o mesmo ícone')
+  ok(
+    (await previewWeapon({ ...weaponSpec, rarity: 'azul' })).icon !== weaponPreview.icon,
+    'raridade muda a faixa colorida do ícone'
+  )
+  ok(
+    (await previewWeapon({ ...weaponSpec, wear: 'bem-desgastada', float: 0.9 })).icon !==
+      weaponPreview.icon,
+    'condição muda as marcas de desgaste'
+  )
+  ok(
+    (await previewWeapon({ ...weaponSpec, pattern: 'listras' })).icon !== weaponPreview.icon,
+    'padrão muda o desenho da skin'
+  )
+
+  const weaponComparison = await compareWeapon(weaponSpec)
+  ok(
+    weaponComparison.columns === 6 && weaponComparison.labels.length === 6,
+    'comparação cobre as seis raridades'
+  )
+  const comparisonPng = pngInfo(
+    Buffer.from(weaponComparison.image.split(',')[1] ?? '', 'base64')
+  )
+  ok(
+    comparisonPng.width === 6 * 64 && comparisonPng.height === 64,
+    'comparação é uma faixa horizontal com um ícone por raridade'
+  )
+
+  assert.throws(() => validateWeaponSpec({ ...weaponSpec, name: 'a' }), /pelo menos 2/)
+  checks += 1
+  console.log('  ok  nome curto é recusado no editor de armas')
+
+  const normalizedWeapon = validateWeaponSpec({
+    ...weaponSpec,
+    wear: 'nova',
+    float: 0.9,
+    size: 40 as 32,
+    colors: { primaria: 'vermelho', secundaria: '#000000' }
+  })
+  ok(normalizedWeapon.float <= 0.07, 'float é limitado à faixa da condição')
+  ok(normalizedWeapon.size === 64, 'tamanho inválido cai para 64 px')
+  ok(
+    normalizedWeapon.colors.primaria === defaultColors('chamas').primaria,
+    'cor inválida volta para o padrão do padrão escolhido'
+  )
+  ok(
+    validateWeaponSpec({ ...weaponSpec, baseId: 'inexistente' }).baseId === 'ak47',
+    'modelo desconhecido cai para o primeiro da lista'
+  )
+  ok(wearForFloat(0.5).id === 'bem-desgastada', 'float alto corresponde a bem desgastada')
+
+  const weaponSuggestion = interpretWeapon('ak-47 dourada com chamas')
+  ok(
+    weaponSuggestion.baseId === 'ak47' &&
+      weaponSuggestion.rarity === 'dourado' &&
+      weaponSuggestion.pattern === 'chamas',
+    'descrição escolhe arma, raridade e padrão'
+  )
+
+  const savedWeapon = await saveWeapon(project.id, weaponSpec)
+  ok(
+    existsSync(join(project.path, 'armas', 'ak-dourada', 'ak-dourada_icone.png')),
+    'ícone da skin salvo na pasta armas/'
+  )
+  ok(
+    existsSync(join(project.path, 'armas', 'ak-dourada', 'ak-dourada_raridades.png')),
+    'comparativo de raridades salvo junto da skin'
+  )
+
+  const weaponSheet = JSON.parse(
+    readFileSync(join(project.path, 'armas', 'ak-dourada', 'ak-dourada.json'), 'utf8')
+  ) as {
+    skin: { raridade: string; condicao: string; float: number; padrao: string }
+    arma: { nome: string; atributos: { dano: number } }
+    variacoes: unknown[]
+  }
+  ok(
+    weaponSheet.skin.raridade === 'dourado' && weaponSheet.skin.condicao === 'nova',
+    'ficha guarda raridade e condição em campos separados'
+  )
+  ok(
+    weaponSheet.arma.nome === 'AK-47' && weaponSheet.arma.atributos.dano === 36,
+    'ficha guarda os atributos da arma base'
+  )
+  ok(weaponSheet.variacoes.length === 6, 'ficha lista as seis raridades')
+
+  ok((await listWeapons(project.id)).length === 1, 'skin aparece na lista do projeto')
+  const planWithWeapons = await buildGodotExportPlan(project.id)
+  ok(
+    planWithWeapons.files.some(
+      (file) => file.relativePath === 'pixel_strike/recursos/armas/ak-dourada/ak-dourada_icone.png'
+    ),
+    'skin entra na exportação da Godot'
+  )
+
+  await applyGodotExport(project.id)
+  ok(
+    existsSync(join(godotDir, 'pixel_strike', 'recursos', 'armas', 'ak-dourada', 'ak-dourada_icone.png')),
+    'exportação copia a skin para a Godot'
+  )
+
+  await removeWeapon(savedWeapon.id)
+  ok((await listWeapons(project.id)).length === 0, 'skin removida sai da lista')
+  ok(
+    !existsSync(join(project.path, 'armas', 'ak-dourada')),
+    'pasta da skin sai do projeto'
+  )
+  ok(
+    readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('ak-dourada')),
+    'skin removida vai para a lixeira interna'
   )
 
   // --- Remoção segura -----------------------------------------------------

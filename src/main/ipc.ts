@@ -3,9 +3,16 @@ import { join } from 'node:path'
 import { IPC, type IpcResult, type StudioPaths, type StudioSettings } from '@shared/contract'
 import type { AnimationConfig } from '@shared/animations'
 import type { MapConfig, MapDraft } from '@shared/maps'
+import type { WeaponSpec } from '@shared/weapons'
 import {
   applyGodotExport,
   backupProject,
+  compareWeapon,
+  interpretWeaponDescription,
+  listWeapons,
+  previewWeapon,
+  removeWeapon,
+  saveWeapon,
   listAnimations,
   listMaps,
   loadMap,
@@ -446,6 +453,35 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
 
   handle<null>(IPC.mapsRemove, async (assetId) => {
     await removeMap(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  // -------------------------------------------------------- armas e skins
+  handle(IPC.weaponsPreview, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da arma inválidos.')
+    return previewWeapon(spec as WeaponSpec)
+  })
+
+  handle(IPC.weaponsCompare, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da arma inválidos.')
+    return compareWeapon(spec as WeaponSpec)
+  })
+
+  handle(IPC.weaponsInterpret, async (description) =>
+    interpretWeaponDescription(typeof description === 'string' ? description : '')
+  )
+
+  handle(IPC.weaponsSave, async (projectId, spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da arma inválidos.')
+    return saveWeapon(requireString(projectId, 'projectId'), spec as WeaponSpec)
+  })
+
+  handle(IPC.weaponsList, async (projectId) =>
+    listWeapons(requireString(projectId, 'projectId'))
+  )
+
+  handle<null>(IPC.weaponsRemove, async (assetId) => {
+    await removeWeapon(requireString(assetId, 'assetId'))
     return null
   })
 }

@@ -8,6 +8,13 @@ import type {
 } from '@shared/characters'
 import type { AnimationAsset, AnimationConfig, AnimationPreview } from '@shared/animations'
 import type { MapAsset, MapConfig, MapDraft, MapPreview } from '@shared/maps'
+import type {
+  WeaponAsset,
+  WeaponComparison,
+  WeaponPreview,
+  WeaponSpec,
+  WeaponSuggestion
+} from '@shared/weapons'
 import {
   IPC,
   type ActivityEntry,
@@ -122,6 +129,16 @@ const api: StudioApi = {
     list: (projectId: string) => invoke<MapAsset[]>(IPC.mapsList, projectId),
     load: (assetId: string) => invoke<MapConfig>(IPC.mapsLoad, assetId),
     remove: (assetId: string) => invoke<void>(IPC.mapsRemove, assetId)
+  },
+  weapons: {
+    preview: (spec: WeaponSpec) => invoke<WeaponPreview>(IPC.weaponsPreview, spec),
+    compare: (spec: WeaponSpec) => invoke<WeaponComparison>(IPC.weaponsCompare, spec),
+    interpret: (description: string) =>
+      invoke<WeaponSuggestion>(IPC.weaponsInterpret, description),
+    save: (projectId: string, spec: WeaponSpec) =>
+      invoke<WeaponAsset>(IPC.weaponsSave, projectId, spec),
+    list: (projectId: string) => invoke<WeaponAsset[]>(IPC.weaponsList, projectId),
+    remove: (assetId: string) => invoke<void>(IPC.weaponsRemove, assetId)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),

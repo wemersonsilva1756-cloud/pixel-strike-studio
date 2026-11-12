@@ -18,6 +18,7 @@ import { ProjectDetail } from './pages/ProjectDetail'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { RoadmapPage } from './pages/RoadmapPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { WeaponsPage } from './pages/WeaponsPage'
 
 function BootScreen(): React.JSX.Element {
   return (
@@ -138,6 +139,7 @@ function CurrentPage(): React.JSX.Element {
       if (route.moduleId === 'monstros') return <CharactersPage category="monstro" />
       if (route.moduleId === 'animacoes') return <AnimationsPage />
       if (route.moduleId === 'mapas') return <MapsPage />
+      if (route.moduleId === 'armas') return <WeaponsPage />
       return <ModulePage moduleId={route.moduleId} />
     case 'configuracoes':
       return <SettingsPage />

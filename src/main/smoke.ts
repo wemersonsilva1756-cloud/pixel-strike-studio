@@ -35,7 +35,10 @@ const PHASE_ONE = `(async () => {
     animSalva: false,
     mapaImagem: false,
     mapaZonas: 0,
-    mapaSalvo: false
+    mapaSalvo: false,
+    armaIcone: false,
+    armaRaridades: 0,
+    armaSalva: false
   }
 
   try {
@@ -118,6 +121,24 @@ const PHASE_ONE = `(async () => {
     await window.studio.maps.save(created.id, proposta)
     info.mapaSalvo = (await window.studio.maps.list(created.id)).length === 1
 
+    const armaSpec = {
+      baseId: 'ak47',
+      name: 'Skin de teste',
+      rarity: 'dourado',
+      wear: 'testada',
+      float: 0.2,
+      pattern: 'camuflado',
+      colors: { primaria: '#4d7c0f', secundaria: '#1f2937' },
+      seed: 4,
+      size: 32
+    }
+    const armaPreview = await window.studio.weapons.preview(armaSpec)
+    info.armaIcone = String(armaPreview.icon).startsWith('data:image/png;base64,')
+    const armaComparacao = await window.studio.weapons.compare(armaSpec)
+    info.armaRaridades = armaComparacao.columns
+    await window.studio.weapons.save(created.id, armaSpec)
+    info.armaSalva = (await window.studio.weapons.list(created.id)).length === 1
+
     await window.studio.settings.update({ onboardingDone: true })
   } catch (error) {
     info.error = String(error && error.message ? error.message : error)
@@ -140,6 +161,7 @@ function phaseTwoScript(projectId: string): string {
       spriteImages: 0,
       animationPage: false,
       mapPage: false,
+      weaponPage: false,
       removed: false
     }
 
@@ -197,6 +219,15 @@ function phaseTwoScript(projectId: string): string {
     info.mapPage =
       mapText.includes('Grade do mapa') && mapText.includes('Mapas salvos')
 
+    const weaponNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Armas e Skins'
+    )
+    weaponNav?.click()
+    await esperar(2200)
+    const weaponText = document.body.innerText
+    info.weaponPage =
+      weaponText.includes('Ícone da skin') && weaponText.includes('Skins salvas')
+
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
     return info
@@ -249,6 +280,13 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseOne['mapaImagem'] || (phaseOne['mapaZonas'] as number) < 3 || !phaseOne['mapaSalvo']) {
     return { ok: false, detail: `construtor de mapas falhou: ${JSON.stringify(phaseOne)}` }
   }
+  if (
+    !phaseOne['armaIcone'] ||
+    phaseOne['armaRaridades'] !== 6 ||
+    !phaseOne['armaSalva']
+  ) {
+    return { ok: false, detail: `editor de armas falhou: ${JSON.stringify(phaseOne)}` }
+  }
 
   const projectId = String(phaseOne['createdId'])
 
@@ -287,6 +325,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseTwo['mapPage']) {
     return { ok: false, detail: `a página de mapas não abriu: ${JSON.stringify(phaseTwo)}` }
   }
+  if (!phaseTwo['weaponPage']) {
+    return { ok: false, detail: `a página de armas não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
   if (!phaseTwo['removed']) {
     return {
       ok: false,
@@ -298,7 +339,7 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
     ok: true,
     detail:
       `interface renderizada (${phaseOne['chars']} caracteres), projeto criado em ` +
-      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas e Godot ` +
+      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas e Godot ` +
       `respondendo, banco em ${phaseOne['dbPath']}`
   }
 }

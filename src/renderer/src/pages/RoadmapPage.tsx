@@ -59,8 +59,10 @@ const STAGES: Stage[] = [
     number: 6,
     title: 'Armas, skins e equipamentos',
     description:
-      'Armas base, skins com padrões e cores, raridades separadas das condições de desgaste, ícones, efeitos de disparo e animação de recarga.',
-    deliverable: 'Biblioteca de armas e skins com variações e ícones.'
+      'Armas base, skins com padrões e cores, raridades separadas das condições de desgaste, ícones e comparação das variações.',
+    deliverable:
+      'Entregue nesta versão: 9 modelos, 6 padrões, 6 raridades e 5 condições independentes, ícone em 32/64/96 px com marcas de desgaste, comparativo das raridades e ficha JSON. Efeitos de disparo e animação de recarga ficam para a etapa 7.',
+    done: true
   },
   {
     number: 7,

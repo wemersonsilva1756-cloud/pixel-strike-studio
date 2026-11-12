@@ -146,14 +146,15 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Armas e Skins',
     stage: 6,
     icon: Crosshair,
+    available: true,
     summary:
-      'Editor de armas pixel art com skins, padrões, raridades, condições e variações da mesma arma.',
+      'Editor de skins em pixel art sobre 9 modelos base, com padrões, cores, raridade separada da condição de desgaste e comparação lado a lado das raridades.',
     planned: [
-      'Modelos base: AK-47, M4A4, AWP, Desert Eagle, Glock, USP-S, MP5, P90 e facas',
-      'Skins com cores, padrões e variações visuais',
-      'Raridades (azul, roxo, rosa, vermelho, dourado e Blue Gem) separadas das condições',
-      'Ícones, sprites, efeitos de disparo e animação de recarga',
-      'Comparação lado a lado das versões da mesma arma'
+      'Modelos base: AK-47, M4A4, AWP, Desert Eagle, Glock-18, USP-S, MP5-SD, P90 e faca',
+      'Skins com duas cores e seis padrões (sólido, listras, camuflado, digital, gradiente e chamas)',
+      'Raridade (azul, roxo, rosa, vermelho, dourado e Blue Gem) separada da condição de desgaste',
+      'Ícone em 32, 64 ou 96 px com marcas de desgaste conforme o float',
+      'Comparação das seis raridades lado a lado e ficha JSON exportada para a Godot'
     ]
   },
   {

@@ -4,14 +4,15 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1 a 5 de 10 concluídas e testadas.**
+> **Estado atual: Etapas 1 a 6 de 10 concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
 > transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
-> spritesheet** e desenha **mapas com tiles, colisão, áreas e spawns** já com
-> TileSet, TileMapLayer e cena prontos para a Godot. Os editores de armas, itens,
-> efeitos e o assistente de IA **ainda não existem** — cada item tem sua etapa e a
-> interface diz isso claramente, sem botões que não funcionam.
+> spritesheet**, desenha **mapas com tiles, colisão, áreas e spawns** e cria
+> **skins de armas** em pixel art com raridade separada da condição de desgaste.
+> Os editores de itens, efeitos e o assistente de IA **ainda não existem** — cada
+> item tem sua etapa e a interface diz isso claramente, sem botões que não
+> funcionam.
 >
 > O gerador da etapa 3 é **procedural e determinístico**, não é IA: a descrição é
 > interpretada por palavras-chave. Os provedores de IA chegam na etapa 9.
@@ -42,6 +43,9 @@ para quem está começando.
 | Spawns de jogador, inimigo e item posicionados no mapa | Funcionando |
 | Proposta de mapa gerada pela descrição, sempre editável | Funcionando |
 | TileSet, TileMapLayer, colisões e spawns gerados para a Godot 4 | Funcionando |
+| Skins em pixel art sobre 9 modelos de arma | Funcionando |
+| Raridade separada da condição de desgaste (float) | Funcionando |
+| Comparação das seis raridades lado a lado | Funcionando |
 | Exportar para a Godot com prévia e backup dos substituídos | Funcionando |
 | Banco de dados local SQLite | Funcionando |
 | Backups completos com restauração | Funcionando |
@@ -49,7 +53,7 @@ para quem está começando.
 | Histórico de ações | Funcionando |
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
-| Geradores de armas, skills, itens e efeitos | Etapas 6 a 8 |
+| Geradores de skills, itens e efeitos | Etapas 7 e 8 |
 | Exportar cenas geradas pelos módulos restantes | Junto com as etapas 6 a 8 |
 | Geração com inteligência artificial de verdade | Etapa 9 |
 | Provedores de IA e assistente central | Etapa 9 |
@@ -198,6 +202,36 @@ Nada disso é simulado: a imagem é desenhada pelo mesmo motor do Studio e o scr
 extrai do `mapa.json` os mesmos dados que você vê na tela. O que ainda **não**
 existe é importar um mapa de fora ou pintar com uma imagem de tileset própria.
 
+### Editor de armas e skins
+
+Menu **Armas e Skins**. Passo a passo:
+
+1. Escolha o **modelo** (AK-47, M4A4, AWP, Desert Eagle, Glock-18, USP-S, MP5-SD, P90
+   ou faca) e o **tamanho** do ícone (32, 64 ou 96 px).
+2. Escolha a **raridade**: azul, roxo, rosa, vermelho, dourado ou Blue Gem.
+3. Escolha a **condição de desgaste** ou arraste o **float** de 0 a 1. A condição
+   muda só as marcas na pintura; a raridade muda só a faixa colorida e a etiqueta.
+   São campos independentes, sempre.
+4. Escolha o **padrão** (cor sólida, listras, camuflado, digital, gradiente ou
+   chamas) e ajuste as **duas cores**.
+5. Opcional: escreva uma descrição como “ak-47 dourada com chamas” e clique em
+   **Aplicar descrição** — o Studio reconhece palavras-chave (não é IA nesta etapa).
+6. Confira o **ícone** e a **comparação das seis raridades** e clique em **Salvar no
+   projeto**.
+
+Cada skin grava em `armas/<nome>/`:
+
+```
+ak-dourada/
+  ak-dourada_icone.png       ← ícone no tamanho escolhido
+  ak-dourada_raridades.png   ← a mesma skin nas seis raridades
+  ak-dourada.json            ← arma, atributos, raridade, condição, float, padrão
+```
+
+O desenho é procedural e determinístico: a mesma semente, cores e padrão geram
+exatamente o mesmo ícone. Ainda **não** existem efeitos de disparo animados nem
+animação de recarga — isso fica para a etapa 7, junto dos efeitos visuais.
+
 ### Gerenciador de arquivos
 
 Menu **Arquivos do projeto**. Você navega pelas pastas, vê imagens como sprites (com
@@ -233,6 +267,7 @@ O que a exportação grava hoje:
 | `pixel_strike/recursos/monstros/...` | Sprites PNG e fichas JSON dos monstros gerados |
 | `pixel_strike/recursos/animacoes/...` | Quadros PNG, spritesheets e fichas JSON das animações |
 | `pixel_strike/recursos/mapas/...` | Imagem, atlas, dados, script e cena de cada mapa |
+| `pixel_strike/recursos/armas/...` | Ícone, comparativo de raridades e ficha JSON de cada skin |
 
 Tudo o que os geradores criam entra na exportação automaticamente — não é preciso
 copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
@@ -257,7 +292,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 169 verificações: banco, projetos, arquivos, Godot, sprites, animações e mapas
+npm run test:core   # 195 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas e armas
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -268,7 +303,7 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 169/169 verificações do
+Resultado da última execução desta versão: **typecheck OK, 195/195 verificações do
 núcleo, build OK, smoke OK**.
 
 ---
@@ -287,6 +322,7 @@ src/
       sprites.ts        desenho em pixel art (grade 32, poses e quatro direções)
       animations.ts     quadros, spritesheet, ficha e remoção de animações
       maps.ts           mapas, colisões, áreas, spawns e arquivos da Godot
+      weapons.ts        skins: desenho, raridade, condição, comparação e ficha
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -337,9 +373,9 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ## Próxima etapa
 
-**Etapa 6 — Armas, skins e equipamentos:** armas base, skins com cores e padrões,
-raridade separada da condição de desgaste, ícones, efeitos de disparo e variações da
-mesma arma lado a lado.
+**Etapa 7 — Skills, efeitos visuais e sonoros:** habilidades descritas em português
+com dano, alcance, recarga e área de efeito, biblioteca de efeitos (explosão, fumaça,
+fogo, impacto, cura) e o script de integração para a Godot 4.
 
-Nada da Etapa 6 começa antes de as etapas 1 a 5 estarem estáveis — e elas estão
+Nada da Etapa 7 começa antes de as etapas 1 a 6 estarem estáveis — e elas estão
 testadas nesta versão.
