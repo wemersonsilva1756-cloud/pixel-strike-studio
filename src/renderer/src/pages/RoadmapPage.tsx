@@ -69,7 +69,9 @@ const STAGES: Stage[] = [
     title: 'Skills, efeitos visuais e sonoros',
     description:
       'Habilidades descritas em linguagem natural com dano, alcance, recarga e área de efeito, além da biblioteca de efeitos e áudio.',
-    deliverable: 'Habilidades configuráveis com script de integração para Godot.'
+    deliverable:
+      'Entregue nesta versão: 7 efeitos com quadros, FPS e cores, e 6 tipos de habilidade com parâmetros limitados, ícone, efeito animado e script GDScript gerado. O áudio (efeitos sonoros e músicas) fica para o polimento da etapa 10.',
+    done: true
   },
   {
     number: 8,

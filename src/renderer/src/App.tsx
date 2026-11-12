@@ -8,6 +8,7 @@ import { Button, ProgressBar } from './components/ui'
 import { AnimationsPage } from './pages/AnimationsPage'
 import { CharactersPage } from './pages/CharactersPage'
 import { Dashboard } from './pages/Dashboard'
+import { EffectsPage } from './pages/EffectsPage'
 import { FilesPage } from './pages/FilesPage'
 import { GodotPage } from './pages/GodotPage'
 import { HelpPage } from './pages/HelpPage'
@@ -18,6 +19,7 @@ import { ProjectDetail } from './pages/ProjectDetail'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { RoadmapPage } from './pages/RoadmapPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { SkillsPage } from './pages/SkillsPage'
 import { WeaponsPage } from './pages/WeaponsPage'
 
 function BootScreen(): React.JSX.Element {
@@ -140,6 +142,8 @@ function CurrentPage(): React.JSX.Element {
       if (route.moduleId === 'animacoes') return <AnimationsPage />
       if (route.moduleId === 'mapas') return <MapsPage />
       if (route.moduleId === 'armas') return <WeaponsPage />
+      if (route.moduleId === 'habilidades') return <SkillsPage />
+      if (route.moduleId === 'efeitos') return <EffectsPage />
       return <ModulePage moduleId={route.moduleId} />
     case 'configuracoes':
       return <SettingsPage />

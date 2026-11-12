@@ -14,6 +14,8 @@ import type {
   WeaponSpec,
   WeaponSuggestion
 } from './weapons'
+import type { EffectAsset, EffectPreview, EffectSpec } from './effects'
+import type { SkillAsset, SkillSpec, SkillSuggestion } from './skills'
 
 /**
  * Contrato compartilhado entre o processo principal (Node) e a interface (React).
@@ -290,6 +292,19 @@ export interface StudioApi {
     list(projectId: string): Promise<WeaponAsset[]>
     remove(assetId: string): Promise<void>
   }
+  effects: {
+    preview(spec: EffectSpec): Promise<EffectPreview>
+    save(projectId: string, spec: EffectSpec): Promise<EffectAsset>
+    list(projectId: string): Promise<EffectAsset[]>
+    remove(assetId: string): Promise<void>
+  }
+  skills: {
+    preview(spec: SkillSpec): Promise<{ icon: string; effect: EffectPreview }>
+    interpret(description: string): Promise<SkillSuggestion>
+    save(projectId: string, spec: SkillSpec): Promise<SkillAsset>
+    list(projectId: string): Promise<SkillAsset[]>
+    remove(assetId: string): Promise<void>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -359,5 +374,14 @@ export const IPC = {
   weaponsSave: 'studio:weapons:save',
   weaponsList: 'studio:weapons:list',
   weaponsRemove: 'studio:weapons:remove',
+  effectsPreview: 'studio:effects:preview',
+  effectsSave: 'studio:effects:save',
+  effectsList: 'studio:effects:list',
+  effectsRemove: 'studio:effects:remove',
+  skillsPreview: 'studio:skills:preview',
+  skillsInterpret: 'studio:skills:interpret',
+  skillsSave: 'studio:skills:save',
+  skillsList: 'studio:skills:list',
+  skillsRemove: 'studio:skills:remove',
   eventProgress: 'studio:event:progress'
 } as const

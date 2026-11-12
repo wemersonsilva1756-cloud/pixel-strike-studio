@@ -4,14 +4,15 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1 a 6 de 10 concluídas e testadas.**
+> **Estado atual: Etapas 1 a 7 de 10 concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
 > transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
 > spritesheet**, desenha **mapas com tiles, colisão, áreas e spawns** e cria
-> **skins de armas** em pixel art com raridade separada da condição de desgaste.
-> Os editores de itens, efeitos e o assistente de IA **ainda não existem** — cada
-> item tem sua etapa e a interface diz isso claramente, sem botões que não
+> **skins de armas** em pixel art com raridade separada da condição de desgaste,
+> gera **efeitos visuais animados** e **habilidades** com parâmetros e script para
+> a Godot 4. Os editores de itens/drops e o assistente de IA **ainda não existem** —
+> cada item tem sua etapa e a interface diz isso claramente, sem botões que não
 > funcionam.
 >
 > O gerador da etapa 3 é **procedural e determinístico**, não é IA: a descrição é
@@ -46,6 +47,10 @@ para quem está começando.
 | Skins em pixel art sobre 9 modelos de arma | Funcionando |
 | Raridade separada da condição de desgaste (float) | Funcionando |
 | Comparação das seis raridades lado a lado | Funcionando |
+| Biblioteca de efeitos (explosão, fumaça, fogo, impacto, sangue, cura, faísca) | Funcionando |
+| Efeitos com quadros, FPS, cores e spritesheet | Funcionando |
+| Habilidades com dano, alcance, raio, duração, recarga e custo | Funcionando |
+| Script GDScript de habilidade gerado automaticamente | Funcionando |
 | Exportar para a Godot com prévia e backup dos substituídos | Funcionando |
 | Banco de dados local SQLite | Funcionando |
 | Backups completos com restauração | Funcionando |
@@ -53,7 +58,7 @@ para quem está começando.
 | Histórico de ações | Funcionando |
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
-| Geradores de skills, itens e efeitos | Etapas 7 e 8 |
+| Geradores de itens e drops | Etapa 8 |
 | Exportar cenas geradas pelos módulos restantes | Junto com as etapas 6 a 8 |
 | Geração com inteligência artificial de verdade | Etapa 9 |
 | Provedores de IA e assistente central | Etapa 9 |
@@ -232,6 +237,57 @@ O desenho é procedural e determinístico: a mesma semente, cores e padrão gera
 exatamente o mesmo ícone. Ainda **não** existem efeitos de disparo animados nem
 animação de recarga — isso fica para a etapa 7, junto dos efeitos visuais.
 
+### Efeitos visuais
+
+Menu **Efeitos Visuais e Sonoros**. Passo a passo:
+
+1. Escolha o **tipo**: explosão, fumaça, fogo, impacto, sangue estilizado, cura ou
+   faísca. Cada tipo traz quadros e FPS sugeridos.
+2. Ajuste **quadros, FPS, tamanho do quadro (32/64/96 px), semente e as duas cores**.
+3. A prévia reproduz sozinha na velocidade do FPS; clique em um quadro para pausar
+   nele.
+4. Clique em **Salvar no projeto**.
+
+Cada efeito grava em `efeitos/<nome>/`:
+
+```
+explosao-de-teste/
+  quadro_01.png ... quadro_06.png
+  explosao-de-teste_sheet.png
+  explosao-de-teste.json
+```
+
+### Skills e habilidades
+
+Menu **Skills e Habilidades**. Passo a passo:
+
+1. Escreva o **nome** e uma **descrição** como “granada de fumaça que dura 8
+   segundos”. **Aplicar descrição** escolhe o tipo e os parâmetros por
+   palavras-chave (não é IA nesta etapa).
+2. Escolha o **tipo**: área de efeito, projétil, cura, escudo, mobilidade ou
+   utilitária.
+3. Ajuste os **parâmetros**: dano, alcance, raio, duração, recarga, custo de energia
+   e velocidade. Os campos têm limites reais aplicados no núcleo.
+4. Escolha o **efeito visual** e as cores da habilidade. A prévia mostra o ícone e a
+   animação do efeito, e a lista de quadros permite pausar em qualquer ponto.
+5. Clique em **Salvar no projeto**.
+
+Cada habilidade grava em `habilidades/<nome>/`:
+
+```
+granada-de-teste/
+  granada-de-teste_icone.png
+  efeito_01.png ... efeito_08.png
+  efeito_sheet.png
+  granada-de-teste.gd      ← script pronto para a Godot 4
+  granada-de-teste.json
+```
+
+O script gerado (`usar(origem, alvo)`) cria a `Area2D` com o raio configurado, aplica
+`receber_dano()` nos corpos que entram, monta o `AnimatedSprite2D` a partir da
+spritesheet do efeito e respeita a recarga. Não há som nesta etapa: a integração
+com áudio fica para o polimento da etapa 10.
+
 ### Gerenciador de arquivos
 
 Menu **Arquivos do projeto**. Você navega pelas pastas, vê imagens como sprites (com
@@ -268,6 +324,8 @@ O que a exportação grava hoje:
 | `pixel_strike/recursos/animacoes/...` | Quadros PNG, spritesheets e fichas JSON das animações |
 | `pixel_strike/recursos/mapas/...` | Imagem, atlas, dados, script e cena de cada mapa |
 | `pixel_strike/recursos/armas/...` | Ícone, comparativo de raridades e ficha JSON de cada skin |
+| `pixel_strike/recursos/efeitos/...` | Quadros, spritesheet e ficha de cada efeito |
+| `pixel_strike/recursos/habilidades/...` | Ícone, quadros do efeito, ficha e script GDScript |
 
 Tudo o que os geradores criam entra na exportação automaticamente — não é preciso
 copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
@@ -292,7 +350,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 195 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas e armas
+npm run test:core   # 228 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos e habilidades
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -303,7 +361,7 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 195/195 verificações do
+Resultado da última execução desta versão: **typecheck OK, 228/228 verificações do
 núcleo, build OK, smoke OK**.
 
 ---
@@ -323,6 +381,8 @@ src/
       animations.ts     quadros, spritesheet, ficha e remoção de animações
       maps.ts           mapas, colisões, áreas, spawns e arquivos da Godot
       weapons.ts        skins: desenho, raridade, condição, comparação e ficha
+      effects.ts        efeitos: partículas por quadro, spritesheet e ficha
+      skills.ts         habilidades: parâmetros, ícone, efeito e script GDScript
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -373,9 +433,9 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ## Próxima etapa
 
-**Etapa 7 — Skills, efeitos visuais e sonoros:** habilidades descritas em português
-com dano, alcance, recarga e área de efeito, biblioteca de efeitos (explosão, fumaça,
-fogo, impacto, cura) e o script de integração para a Godot 4.
+**Etapa 8 — Itens, drops e economia:** coletes, capacetes, mochilas, seringas, kits
+médicos e itens especiais com ícones e atributos, tabelas de recompensas, caixas,
+calculadora de probabilidades e validação real dos 100%.
 
-Nada da Etapa 7 começa antes de as etapas 1 a 6 estarem estáveis — e elas estão
+Nada da Etapa 8 começa antes de as etapas 1 a 7 estarem estáveis — e elas estão
 testadas nesta versão.

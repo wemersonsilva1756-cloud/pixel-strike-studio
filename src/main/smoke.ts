@@ -38,7 +38,11 @@ const PHASE_ONE = `(async () => {
     mapaSalvo: false,
     armaIcone: false,
     armaRaridades: 0,
-    armaSalva: false
+    armaSalva: false,
+    efeitoQuadros: 0,
+    efeitoSalvo: false,
+    skillIcone: false,
+    skillSalva: false
   }
 
   try {
@@ -139,6 +143,34 @@ const PHASE_ONE = `(async () => {
     await window.studio.weapons.save(created.id, armaSpec)
     info.armaSalva = (await window.studio.weapons.list(created.id)).length === 1
 
+    const efeitoSpec = {
+      kind: 'explosao',
+      name: 'Efeito de teste',
+      colors: { primaria: '#fbbf24', secundaria: '#b91c1c' },
+      size: 32,
+      frames: 4,
+      fps: 12,
+      seed: 6
+    }
+    const efeitoPreview = await window.studio.effects.preview(efeitoSpec)
+    info.efeitoQuadros = efeitoPreview.frames.length
+    await window.studio.effects.save(created.id, efeitoSpec)
+    info.efeitoSalvo = (await window.studio.effects.list(created.id)).length === 1
+
+    const skillSpec = {
+      name: 'Habilidade de teste',
+      description: 'granada de fumaça que dura 8 segundos',
+      kind: 'utilitaria',
+      effectKind: 'fumaca',
+      params: { dano: 0, alcance: 120, raio: 80, duracao: 8, recarga: 14, custo: 45, velocidade: 0 },
+      colors: { primaria: '#9ca3af', secundaria: '#4b5563' },
+      seed: 12
+    }
+    const skillPreview = await window.studio.skills.preview(skillSpec)
+    info.skillIcone = String(skillPreview.icon).startsWith('data:image/png;base64,')
+    await window.studio.skills.save(created.id, skillSpec)
+    info.skillSalva = (await window.studio.skills.list(created.id)).length === 1
+
     await window.studio.settings.update({ onboardingDone: true })
   } catch (error) {
     info.error = String(error && error.message ? error.message : error)
@@ -162,6 +194,8 @@ function phaseTwoScript(projectId: string): string {
       animationPage: false,
       mapPage: false,
       weaponPage: false,
+      effectPage: false,
+      skillPage: false,
       removed: false
     }
 
@@ -228,6 +262,24 @@ function phaseTwoScript(projectId: string): string {
     info.weaponPage =
       weaponText.includes('Ícone da skin') && weaponText.includes('Skins salvas')
 
+    const effectNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Efeitos Visuais e Sonoros'
+    )
+    effectNav?.click()
+    await esperar(2000)
+    const effectText = document.body.innerText
+    info.effectPage =
+      effectText.includes('Prévia animada') && effectText.includes('Efeitos salvos')
+
+    const skillNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Skills e Habilidades'
+    )
+    skillNav?.click()
+    await esperar(2000)
+    const skillText = document.body.innerText
+    info.skillPage =
+      skillText.includes('Parâmetros') && skillText.includes('Habilidades salvas')
+
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
     return info
@@ -287,6 +339,14 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   ) {
     return { ok: false, detail: `editor de armas falhou: ${JSON.stringify(phaseOne)}` }
   }
+  if (
+    phaseOne['efeitoQuadros'] !== 4 ||
+    !phaseOne['efeitoSalvo'] ||
+    !phaseOne['skillIcone'] ||
+    !phaseOne['skillSalva']
+  ) {
+    return { ok: false, detail: `efeitos/habilidades falharam: ${JSON.stringify(phaseOne)}` }
+  }
 
   const projectId = String(phaseOne['createdId'])
 
@@ -328,6 +388,12 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseTwo['weaponPage']) {
     return { ok: false, detail: `a página de armas não abriu: ${JSON.stringify(phaseTwo)}` }
   }
+  if (!phaseTwo['effectPage']) {
+    return { ok: false, detail: `a página de efeitos não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
+  if (!phaseTwo['skillPage']) {
+    return { ok: false, detail: `a página de habilidades não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
   if (!phaseTwo['removed']) {
     return {
       ok: false,
@@ -339,7 +405,7 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
     ok: true,
     detail:
       `interface renderizada (${phaseOne['chars']} caracteres), projeto criado em ` +
-      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas e Godot ` +
+      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas, efeitos, habilidades e Godot ` +
       `respondendo, banco em ${phaseOne['dbPath']}`
   }
 }

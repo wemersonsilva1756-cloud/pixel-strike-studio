@@ -245,7 +245,7 @@ export function GodotPage(): React.JSX.Element {
           />
           <Note tone="info">
             A exportação envia a preparação do Pixel Strike (script utilitário, manifesto e
-            instruções), os personagens, monstros, animações, mapas e skins já gerados e todos os arquivos que
+            instruções), os personagens, monstros, animações, mapas, skins, efeitos e habilidades já gerados e todos os arquivos que
             você colocar na pasta <strong className="text-ink-100">godot/</strong> do projeto.
             Mapas entram na etapa 5.
           </Note>
@@ -495,7 +495,7 @@ export function GodotPage(): React.JSX.Element {
             </div>
 
             <p className="text-[11px] text-ink-500">
-              {plan.assetCount} arquivo(s) de recursos (pasta godot/, sprites, animações, mapas e skins). Os
+              {plan.assetCount} arquivo(s) de recursos (pasta godot/, sprites, animações, mapas, skins, efeitos e habilidades). Os
               demais são a preparação criada pelo Studio.
             </p>
           </div>

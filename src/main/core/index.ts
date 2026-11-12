@@ -7,6 +7,8 @@ import { configureCharacters } from './characters'
 import { configureAnimations } from './animations'
 import { configureMaps } from './maps'
 import { configureWeapons } from './weapons'
+import { configureEffects } from './effects'
+import { configureSkills } from './skills'
 import { ensureDir } from './filesystem'
 
 export * from './database'
@@ -25,6 +27,8 @@ export * from './characters'
 export * from './animations'
 export * from './maps'
 export * from './weapons'
+export * from './effects'
+export * from './skills'
 
 /**
  * Inicializa o núcleo local (banco de dados + serviços).
@@ -59,6 +63,8 @@ export async function initializeCore(options: CoreOptions): Promise<void> {
   configureAnimations({ trashDir })
   configureMaps({ trashDir })
   configureWeapons({ trashDir })
+  configureEffects({ trashDir })
+  configureSkills({ trashDir })
 
   initialized = true
 }

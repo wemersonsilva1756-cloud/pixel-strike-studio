@@ -50,6 +50,10 @@ Regras que sustentam essa divisão:
 | `src/shared/maps.ts` | Tiles, temas, zonas, spawns e geração determinística de proposta de mapa |
 | `src/main/core/weapons.ts` | Skins: validação, desenho pixel art, comparação, gravação e remoção |
 | `src/shared/weapons.ts` | Modelos de arma, raridades, condições, padrões e interpretação de descrição |
+| `src/main/core/effects.ts` | Motor de partículas por quadro, spritesheet, gravação e remoção de efeitos |
+| `src/shared/effects.ts` | Tipos de efeito, presets de quadros/FPS/cores e limites |
+| `src/main/core/skills.ts` | Habilidades: validação, ícone, efeito, script GDScript e gravação |
+| `src/shared/skills.ts` | Tipos de habilidade, parâmetros, faixas e interpretação de descrição |
 | `src/main/core/png.ts` | Codificador PNG RGBA com `zlib` (sem dependências externas) |
 | `src/main/smoke.ts` | Teste automático em duas fases (com recarga da janela) |
 | `src/main/core/settings-store.ts` | Preferências em tabela chave/valor |
@@ -110,6 +114,11 @@ arbitrário da interface: o núcleo sempre resolve os caminhos a partir do banco
 | `studio:weapons:interpret` | sugestões de arma, raridade e padrão por palavras-chave |
 | `studio:weapons:save` | grava ícone, comparativo e ficha em `armas/` |
 | `studio:weapons:list` / `remove` | lista skins e leva a pasta para a lixeira |
+| `studio:effects:preview` | quadros e spritesheet do efeito em memória |
+| `studio:effects:save` / `list` / `remove` | grava em `efeitos/`, lista e move para a lixeira |
+| `studio:skills:preview` | ícone + animação do efeito da habilidade |
+| `studio:skills:interpret` | sugere tipo, efeito e parâmetros por palavras-chave |
+| `studio:skills:save` / `list` / `remove` | grava ícone, quadros, `.gd` e ficha em `habilidades/` |
 | `studio:event:progress` | evento (main → renderer) de operações longas |
 
 `studio:app:smoke-ready` é o único canal `send` (sem resposta), usado pelo teste
@@ -318,6 +327,30 @@ O mapa é uma grade de tiles com dados que a Godot entende de verdade.
   `<slug>.json` com arma, atributos, skin, variações e condições.
 - A exportação para a Godot também copia `armas/` para `pixel_strike/recursos/`.
 
+## Efeitos e habilidades (etapa 7)
+
+- `src/shared/effects.ts` define os 7 tipos (explosão, fumaça, fogo, impacto, sangue
+  estilizado, cura e faísca), os presets de quadros/FPS/cores e os limites
+  (2–16 quadros, 1–30 FPS, 32/64/96 px).
+- `effects.ts` desenha cada quadro com um motor de partículas simples e
+  determinístico: discos, quadrados e raios posicionados por hash da semente, com
+  transparência decrescente. `renderEffectFrames` devolve pixels crus,
+  `buildEffectSheet` monta a faixa horizontal e a gravação cria
+  `efeitos/<slug>/quadro_NN.png`, `<slug>_sheet.png` e `<slug>.json`.
+- `src/shared/skills.ts` define os 6 tipos de habilidade, os parâmetros
+  (dano, alcance, raio, duração, recarga, custo e velocidade), as faixas válidas e
+  `interpretSkill(description)`, que prioriza o **efeito** sobre o meio de entrega
+  (uma “granada de fumaça” vira fumaça, não explosão).
+- `skills.ts` valida e limita os parâmetros, desenha um ícone 64 px com o símbolo do
+  tipo de habilidade e grava `habilidades/<slug>/`: ícone, quadros do efeito,
+  `efeito_sheet.png`, `<slug>.json` e `<slug>.gd`.
+- O GDScript gerado (`usar(origem, alvo)`) cria `Area2D` + `CircleShape2D` com o raio,
+  chama `receber_dano()` nos corpos que entram, monta `AnimatedSprite2D` com
+  `AtlasTexture` por quadro da spritesheet, respeita a recarga e libera os nós no fim
+  da duração.
+- A exportação para a Godot copia `efeitos/` e `habilidades/` junto dos demais
+  recursos.
+
 ## Teste automático do Electron (`npm run smoke`)
 
 Executa o app compilado com `--smoke-test`:
@@ -329,11 +362,13 @@ Executa o app compilado com `--smoke-test`:
 - **fase 1**: cria um projeto, faz backup, lista a raiz, cria uma pasta, lê o
   `projeto.json`, consulta o estado inicial da Godot, gera um sprite (prévia + save),
   monta uma animação de 6 quadros com spritesheet (prévia + save), propõe, renderiza
-  e salva um mapa de 24×16 tiles e gera uma skin com ícone, comparação e save;
+  e salva um mapa de 24×16 tiles, gera uma skin com ícone/comparação/save, um efeito
+  de 4 quadros e uma habilidade com script;
 - recarrega a janela, como um reinício, e **fase 2**: confirma que o app abriu no
   painel, abre as páginas de arquivos, Godot, personagens, animações e mapas pelo
-  menu, verifica que as pastas, os sprites, a linha do tempo, a grade do mapa e o
-  ícone da skin aparecem e remove o projeto pela lixeira;
+  menu, verifica que as pastas, os sprites, a linha do tempo, a grade do mapa, o ícone
+  da skin, a prévia do efeito e os parâmetros da habilidade aparecem e remove o
+  projeto pela lixeira;
 - encerra com código 0 apenas se tudo responder como esperado, e imprime um resumo.
 
 Isso cobre de uma vez: preload, IPC, validações, SQLite, sistema de arquivos, React e

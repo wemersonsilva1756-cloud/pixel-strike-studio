@@ -4,13 +4,24 @@ import { IPC, type IpcResult, type StudioPaths, type StudioSettings } from '@sha
 import type { AnimationConfig } from '@shared/animations'
 import type { MapConfig, MapDraft } from '@shared/maps'
 import type { WeaponSpec } from '@shared/weapons'
+import type { EffectSpec } from '@shared/effects'
+import type { SkillSpec } from '@shared/skills'
 import {
   applyGodotExport,
   backupProject,
   compareWeapon,
   interpretWeaponDescription,
+  listEffects,
+  listSkills,
   listWeapons,
+  previewEffect,
+  previewSkill,
   previewWeapon,
+  removeEffect,
+  removeSkill,
+  saveEffect,
+  saveSkill,
+  interpretSkillDescription,
   removeWeapon,
   saveWeapon,
   listAnimations,
@@ -482,6 +493,50 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
 
   handle<null>(IPC.weaponsRemove, async (assetId) => {
     await removeWeapon(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  // --------------------------------------------------------------- efeitos
+  handle(IPC.effectsPreview, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados do efeito inválidos.')
+    return previewEffect(spec as EffectSpec)
+  })
+
+  handle(IPC.effectsSave, async (projectId, spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados do efeito inválidos.')
+    return saveEffect(requireString(projectId, 'projectId'), spec as EffectSpec)
+  })
+
+  handle(IPC.effectsList, async (projectId) =>
+    listEffects(requireString(projectId, 'projectId'))
+  )
+
+  handle<null>(IPC.effectsRemove, async (assetId) => {
+    await removeEffect(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  // ----------------------------------------------------------- habilidades
+  handle(IPC.skillsPreview, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da habilidade inválidos.')
+    return previewSkill(spec as SkillSpec)
+  })
+
+  handle(IPC.skillsInterpret, async (description) =>
+    interpretSkillDescription(typeof description === 'string' ? description : '')
+  )
+
+  handle(IPC.skillsSave, async (projectId, spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da habilidade inválidos.')
+    return saveSkill(requireString(projectId, 'projectId'), spec as SkillSpec)
+  })
+
+  handle(IPC.skillsList, async (projectId) =>
+    listSkills(requireString(projectId, 'projectId'))
+  )
+
+  handle<null>(IPC.skillsRemove, async (assetId) => {
+    await removeSkill(requireString(assetId, 'assetId'))
     return null
   })
 }

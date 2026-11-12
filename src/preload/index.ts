@@ -15,6 +15,8 @@ import type {
   WeaponSpec,
   WeaponSuggestion
 } from '@shared/weapons'
+import type { EffectAsset, EffectPreview, EffectSpec } from '@shared/effects'
+import type { SkillAsset, SkillSpec, SkillSuggestion } from '@shared/skills'
 import {
   IPC,
   type ActivityEntry,
@@ -139,6 +141,23 @@ const api: StudioApi = {
       invoke<WeaponAsset>(IPC.weaponsSave, projectId, spec),
     list: (projectId: string) => invoke<WeaponAsset[]>(IPC.weaponsList, projectId),
     remove: (assetId: string) => invoke<void>(IPC.weaponsRemove, assetId)
+  },
+  effects: {
+    preview: (spec: EffectSpec) => invoke<EffectPreview>(IPC.effectsPreview, spec),
+    save: (projectId: string, spec: EffectSpec) =>
+      invoke<EffectAsset>(IPC.effectsSave, projectId, spec),
+    list: (projectId: string) => invoke<EffectAsset[]>(IPC.effectsList, projectId),
+    remove: (assetId: string) => invoke<void>(IPC.effectsRemove, assetId)
+  },
+  skills: {
+    preview: (spec: SkillSpec) =>
+      invoke<{ icon: string; effect: EffectPreview }>(IPC.skillsPreview, spec),
+    interpret: (description: string) =>
+      invoke<SkillSuggestion>(IPC.skillsInterpret, description),
+    save: (projectId: string, spec: SkillSpec) =>
+      invoke<SkillAsset>(IPC.skillsSave, projectId, spec),
+    list: (projectId: string) => invoke<SkillAsset[]>(IPC.skillsList, projectId),
+    remove: (assetId: string) => invoke<void>(IPC.skillsRemove, assetId)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),

@@ -22,20 +22,31 @@ import {
   applyGodotExport,
   backupProject,
   buildGodotExportPlan,
+  buildSkillScript,
   compareWeapon,
   listAnimations,
+  listEffects,
+  listSkills,
   listMaps,
   listWeapons,
   loadMap,
   previewAnimation,
+  previewEffect,
   previewMap,
+  previewSkill,
   previewWeapon,
   proposeMapConfig,
+  removeEffect,
   removeMap,
+  removeSkill,
   removeWeapon,
+  saveEffect,
   saveMap,
+  saveSkill,
   saveWeapon,
+  validateEffectSpec,
   validateMapConfig,
+  validateSkillSpec,
   validateWeaponSpec,
   removeAnimation,
   saveAnimation,
@@ -75,6 +86,7 @@ import {
 import { defaultSpec } from '../src/shared/characters'
 import { proposeMap } from '../src/shared/maps'
 import { defaultColors, interpretWeapon, wearForFloat } from '../src/shared/weapons'
+import { interpretSkill } from '../src/shared/skills'
 
 const root = mkdtempSync(join(tmpdir(), 'pixel-strike-test-'))
 const dataDir = join(root, 'dados')
@@ -901,6 +913,187 @@ async function main(): Promise<void> {
   ok(
     readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('ak-dourada')),
     'skin removida vai para a lixeira interna'
+  )
+
+  // --- Efeitos visuais (etapa 7) -----------------------------------------
+  const effectSpec = {
+    kind: 'explosao' as const,
+    name: 'Explosão de Teste',
+    colors: { primaria: '#fbbf24', secundaria: '#b91c1c' },
+    size: 64 as const,
+    frames: 6,
+    fps: 12,
+    seed: 5
+  }
+
+  const effectPreview = await previewEffect(effectSpec)
+  ok(effectPreview.frames.length === 6, 'prévia do efeito devolve um quadro por batida')
+  const effectFramePng = pngInfo(Buffer.from(effectPreview.frames[0]?.split(',')[1] ?? '', 'base64'))
+  ok(
+    effectFramePng.width === 64 && effectFramePng.height === 64 && effectFramePng.colorType === 6,
+    'quadro do efeito sai em 64x64 com transparência'
+  )
+  ok(new Set(effectPreview.frames).size > 1, 'quadros do efeito são diferentes entre si')
+  ok(effectPreview.durationMs === 500, 'duração do efeito calculada pelo FPS')
+  const effectSheetPng = pngInfo(Buffer.from(effectPreview.sheet.split(',')[1] ?? '', 'base64'))
+  ok(
+    effectSheetPng.width === 6 * 64 && effectSheetPng.height === 64,
+    'spritesheet do efeito é horizontal'
+  )
+  ok(
+    (await previewEffect(effectSpec)).frames[0] === effectPreview.frames[0],
+    'mesma semente gera o mesmo efeito'
+  )
+  ok(
+    (await previewEffect({ ...effectSpec, kind: 'fumaca' })).frames[0] !== effectPreview.frames[0],
+    'tipo de efeito muda o desenho'
+  )
+
+  assert.throws(() => validateEffectSpec({ ...effectSpec, name: 'a' }), /pelo menos 2/)
+  checks += 1
+  console.log('  ok  nome curto é recusado na biblioteca de efeitos')
+
+  const clampedEffect = validateEffectSpec({ ...effectSpec, frames: 99, fps: 99 })
+  ok(clampedEffect.frames === 16 && clampedEffect.fps === 30, 'quadros e FPS do efeito são limitados')
+
+  const savedEffect = await saveEffect(project.id, effectSpec)
+  ok(
+    existsSync(join(project.path, 'efeitos', 'explosao-de-teste', 'quadro_01.png')),
+    'quadros do efeito salvos na pasta efeitos/'
+  )
+  ok(
+    existsSync(join(project.path, 'efeitos', 'explosao-de-teste', 'explosao-de-teste_sheet.png')),
+    'spritesheet do efeito salva junto dos quadros'
+  )
+  const effectSheetJson = JSON.parse(
+    readFileSync(join(project.path, 'efeitos', 'explosao-de-teste', 'explosao-de-teste.json'), 'utf8')
+  ) as { tipo: string; quadros: number; folha: { colunas: number } }
+  ok(
+    effectSheetJson.tipo === 'explosao' && effectSheetJson.quadros === 6,
+    'ficha do efeito guarda tipo e quantidade de quadros'
+  )
+  ok((await listEffects(project.id)).length === 1, 'efeito aparece na lista do projeto')
+
+  // --- Habilidades (etapa 7) ---------------------------------------------
+  const skillSpec = {
+    name: 'Granada de Teste',
+    description: 'granada de fumaça que dura 8 segundos',
+    kind: 'utilitaria' as const,
+    effectKind: 'fumaca' as const,
+    params: { dano: 0, alcance: 120, raio: 80, duracao: 8, recarga: 14, custo: 45, velocidade: 0 },
+    colors: { primaria: '#9ca3af', secundaria: '#4b5563' },
+    seed: 12
+  }
+
+  const skillPreview = await previewSkill(skillSpec)
+  ok(skillPreview.icon.startsWith('data:image/png;base64,'), 'prévia da habilidade devolve ícone')
+  const skillIconPng = pngInfo(Buffer.from(skillPreview.icon.split(',')[1] ?? '', 'base64'))
+  ok(skillIconPng.width === 64 && skillIconPng.height === 64, 'ícone da habilidade sai em 64 px')
+  ok(skillPreview.effect.frames.length >= 2, 'habilidade traz o efeito animado')
+
+  const skillSuggestion = interpretSkill('granada de fumaça que dura 8 segundos')
+  ok(
+    skillSuggestion.kind === 'utilitaria' && skillSuggestion.effectKind === 'fumaca',
+    'descrição escolhe tipo e efeito da habilidade'
+  )
+
+  assert.throws(() => validateSkillSpec({ ...skillSpec, name: 'a' }), /pelo menos 2/)
+  checks += 1
+  console.log('  ok  nome curto é recusado no editor de habilidades')
+
+  const clampedSkill = validateSkillSpec({
+    ...skillSpec,
+    params: { ...skillSpec.params, dano: 99999, raio: 1, recarga: 0 }
+  })
+  ok(
+    clampedSkill.params.dano === 500 &&
+      clampedSkill.params.raio === 4 &&
+      clampedSkill.params.recarga === 0.1,
+    'parâmetros da habilidade são limitados às faixas'
+  )
+
+  const savedSkill = await saveSkill(project.id, skillSpec)
+  ok(
+    existsSync(join(project.path, 'habilidades', 'granada-de-teste', 'granada-de-teste_icone.png')),
+    'ícone da habilidade salvo na pasta habilidades/'
+  )
+  ok(
+    existsSync(join(project.path, 'habilidades', 'granada-de-teste', 'efeito_sheet.png')),
+    'spritesheet do efeito da habilidade salva'
+  )
+
+  const skillScript = readFileSync(
+    join(project.path, 'habilidades', 'granada-de-teste', 'granada-de-teste.gd'),
+    'utf8'
+  )
+  ok(
+    skillScript.includes('Area2D') &&
+      skillScript.includes('AnimatedSprite2D') &&
+      skillScript.includes('receber_dano'),
+    'script da habilidade cria área, efeito e aplica dano'
+  )
+  ok(
+    skillScript.includes('"recarga": 14') && skillScript.includes('"raio": 80'),
+    'script guarda os parâmetros reais da habilidade'
+  )
+  ok(buildSkillScript(skillSpec, 'teste').includes('extends Node'), 'gerador de script é determinístico')
+
+  const skillJson = JSON.parse(
+    readFileSync(join(project.path, 'habilidades', 'granada-de-teste', 'granada-de-teste.json'), 'utf8')
+  ) as {
+    tipo: string
+    parametros: { recarga: number; raio: number }
+    efeito: { tipo: string; quadros: number }
+  }
+  ok(
+    skillJson.tipo === 'utilitaria' && skillJson.parametros.recarga === 14,
+    'ficha guarda tipo e parâmetros da habilidade'
+  )
+  ok(
+    skillJson.efeito.tipo === 'fumaca' && skillJson.efeito.quadros >= 2,
+    'ficha guarda o efeito associado'
+  )
+
+  ok((await listSkills(project.id)).length === 1, 'habilidade aparece na lista do projeto')
+
+  const planWithSkills = await buildGodotExportPlan(project.id)
+  ok(
+    planWithSkills.files.some(
+      (file) =>
+        file.relativePath ===
+        'pixel_strike/recursos/habilidades/granada-de-teste/granada-de-teste.gd'
+    ),
+    'script da habilidade entra na exportação da Godot'
+  )
+  ok(
+    planWithSkills.files.some((file) =>
+      file.relativePath.endsWith('efeitos/explosao-de-teste/explosao-de-teste_sheet.png')
+    ),
+    'efeito entra na exportação da Godot'
+  )
+
+  await applyGodotExport(project.id)
+  ok(
+    existsSync(
+      join(godotDir, 'pixel_strike', 'recursos', 'habilidades', 'granada-de-teste', 'granada-de-teste.gd')
+    ),
+    'exportação copia a habilidade para a Godot'
+  )
+
+  await removeSkill(savedSkill.id)
+  await removeEffect(savedEffect.id)
+  ok(
+    (await listSkills(project.id)).length === 0 && (await listEffects(project.id)).length === 0,
+    'habilidade e efeito removidos saem da lista'
+  )
+  ok(
+    !existsSync(join(project.path, 'habilidades', 'granada-de-teste')) &&
+      !existsSync(join(project.path, 'efeitos', 'explosao-de-teste')),
+    'pastas da habilidade e do efeito saem do projeto'
+  )
+  ok(
+    readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('granada-de-teste')),
+    'habilidade removida vai para a lixeira interna'
   )
 
   // --- Remoção segura -----------------------------------------------------

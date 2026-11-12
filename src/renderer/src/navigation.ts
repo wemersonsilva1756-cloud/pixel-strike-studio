@@ -162,8 +162,9 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Skills e Habilidades',
     stage: 7,
     icon: Sparkles,
+    available: true,
     summary:
-      'Descrever habilidades em português e receber efeito visual, parâmetros e código pronto para a Godot.',
+      'Crie habilidades com dano, alcance, raio, duração, recarga, custo e velocidade, efeito visual animado e script GDScript pronto para a Godot 4.',
     planned: [
       'Dano, alcance, duração, recarga e área de efeito',
       'Granadas, fumaça, explosões, cura, escudos e habilidades táticas',
@@ -177,8 +178,9 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Efeitos Visuais e Sonoros',
     stage: 7,
     icon: Zap,
+    available: true,
     summary:
-      'Gerar e organizar explosões, fumaça, fogo, impactos, sangue estilizado, cura e partículas.',
+      'Biblioteca de efeitos com explosão, fumaça, fogo, impacto, sangue estilizado, cura e faísca: quadros, FPS, cores, spritesheet e ficha JSON.',
     planned: [
       'Biblioteca de efeitos por categoria',
       'Edição de quadros, cores e tempo de vida',
