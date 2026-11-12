@@ -8,6 +8,7 @@ import type { EffectSpec } from '@shared/effects'
 import type { SkillSpec } from '@shared/skills'
 import type { ItemSpec } from '@shared/items'
 import type { DropTableSpec } from '@shared/drops'
+import { isAiProviderId, type AssistantPlan } from '@shared/ai'
 import {
   applyGodotExport,
   backupProject,
@@ -16,8 +17,17 @@ import {
   listEffects,
   listSkills,
   listWeapons,
+  applyPlan,
+  generateAudio,
+  generateCode,
+  generateImage,
+  generateText,
+  planCreations,
   previewEffect,
   previewItem,
+  removeAiKey,
+  saveAiProvider,
+  testAiProvider,
   previewSkill,
   interpretItemDescription,
   dropTableSummaryStats,
@@ -33,6 +43,8 @@ import {
   interpretSkillDescription,
   removeWeapon,
   saveWeapon,
+  listAiFiles,
+  listAiProviders,
   listAnimations,
   listDropTables,
   listItems,
@@ -592,6 +604,72 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
   handle<null>(IPC.dropsRemove, async (assetId) => {
     await removeDropTable(requireString(assetId, 'assetId'))
     return null
+  })
+
+  // ------------------------------------------------------------ IA (etapa 9)
+  handle(IPC.aiProviders, async () => listAiProviders())
+
+  handle(IPC.aiSaveProvider, async (input) => {
+    if (!input || typeof input !== 'object') throw new Error('Dados do provedor inválidos.')
+    const data = input as Record<string, unknown>
+    if (!isAiProviderId(data['provider'])) throw new Error('Provedor de IA desconhecido.')
+    return saveAiProvider({
+      provider: data['provider'],
+      key: optionalString(data['key']) ?? null,
+      model: optionalString(data['model']),
+      imageModel: optionalString(data['imageModel']),
+      audioModel: optionalString(data['audioModel']),
+      voice: optionalString(data['voice'])
+    })
+  })
+
+  handle(IPC.aiRemoveKey, async (provider) => {
+    if (!isAiProviderId(provider)) throw new Error('Provedor de IA desconhecido.')
+    return removeAiKey(provider)
+  })
+
+  handle(IPC.aiTest, async (provider) => {
+    if (!isAiProviderId(provider)) throw new Error('Provedor de IA desconhecido.')
+    return testAiProvider(provider)
+  })
+
+  handle(IPC.aiText, async (prompt, system) =>
+    generateText({
+      prompt: requireString(prompt, 'pedido'),
+      system: optionalString(system)
+    })
+  )
+
+  handle(IPC.aiCode, async (projectId, prompt) =>
+    generateCode({ projectId: requireString(projectId, 'projectId'), prompt: requireString(prompt, 'pedido') })
+  )
+
+  handle(IPC.aiImage, async (projectId, prompt, size) =>
+    generateImage({
+      projectId: requireString(projectId, 'projectId'),
+      prompt: requireString(prompt, 'descrição'),
+      size: size === '1024x1536' || size === '1536x1024' ? size : '1024x1024'
+    })
+  )
+
+  handle(IPC.aiAudio, async (projectId, text) =>
+    generateAudio({ projectId: requireString(projectId, 'projectId'), text: requireString(text, 'texto') })
+  )
+
+  handle(IPC.aiFiles, async (projectId) => listAiFiles(requireString(projectId, 'projectId')))
+
+  handle(IPC.assistantPlan, async (projectId, request) =>
+    planCreations({
+      projectId: requireString(projectId, 'projectId'),
+      request: requireString(request, 'pedido')
+    })
+  )
+
+  handle(IPC.assistantApply, async (projectId, plan) => {
+    if (!plan || typeof plan !== 'object' || !Array.isArray((plan as AssistantPlan).steps)) {
+      throw new Error('Plano inválido.')
+    }
+    return applyPlan(requireString(projectId, 'projectId'), plan as AssistantPlan)
   })
 }
 

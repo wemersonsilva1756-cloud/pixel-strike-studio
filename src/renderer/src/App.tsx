@@ -7,6 +7,7 @@ import { ToastHost } from './components/ToastHost'
 import { Button, ProgressBar } from './components/ui'
 import { AnimationsPage } from './pages/AnimationsPage'
 import { CharactersPage } from './pages/CharactersPage'
+import { AiPage } from './pages/AiPage'
 import { Dashboard } from './pages/Dashboard'
 import { DropsPage } from './pages/DropsPage'
 import { EffectsPage } from './pages/EffectsPage'
@@ -148,6 +149,7 @@ function CurrentPage(): React.JSX.Element {
       if (route.moduleId === 'efeitos') return <EffectsPage />
       if (route.moduleId === 'itens') return <ItemsPage />
       if (route.moduleId === 'drops') return <DropsPage />
+      if (route.moduleId === 'assistente') return <AiPage />
       return <ModulePage moduleId={route.moduleId} />
     case 'configuracoes':
       return <SettingsPage />

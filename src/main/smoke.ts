@@ -45,7 +45,9 @@ const PHASE_ONE = `(async () => {
     skillSalva: false,
     itemIcone: false,
     itemSalvo: false,
-    dropsSalva: false
+    dropsSalva: false,
+    iaProvedores: false,
+    iaSemChave: false
   }
 
   try {
@@ -205,6 +207,17 @@ const PHASE_ONE = `(async () => {
     info.dropsSalva =
       dropStats.valid && (await window.studio.drops.list(created.id)).length === 1
 
+    // Nenhuma rede no smoke: só conferimos o catálogo e a mensagem de falta de chave.
+    const aiView = await window.studio.ai.providers()
+    info.iaProvedores =
+      aiView.providers.length === 3 && aiView.providers.every((provider) => !provider.configured)
+    try {
+      await window.studio.assistant.plan(created.id, 'crie um colete raro')
+      info.iaSemChave = false
+    } catch (error) {
+      info.iaSemChave = /configurado/i.test(error instanceof Error ? error.message : '')
+    }
+
     await window.studio.settings.update({ onboardingDone: true })
   } catch (error) {
     info.error = String(error && error.message ? error.message : error)
@@ -232,6 +245,7 @@ function phaseTwoScript(projectId: string): string {
       skillPage: false,
       itemPage: false,
       dropPage: false,
+      aiPage: false,
       removed: false
     }
 
@@ -334,6 +348,15 @@ function phaseTwoScript(projectId: string): string {
     info.dropPage =
       dropText.includes('Calculadora de chances') && dropText.includes('Tabelas salvas')
 
+    const aiNav = [...document.querySelectorAll('button')].find((button) =>
+      button.textContent.trim().startsWith('Assistente de IA')
+    )
+    aiNav?.click()
+    await esperar(2000)
+    const aiText = document.body.innerText
+    info.aiPage =
+      aiText.includes('Provedores') && aiText.includes('Assistente de criações')
+
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
     return info
@@ -404,6 +427,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseOne['itemIcone'] || !phaseOne['itemSalvo'] || !phaseOne['dropsSalva']) {
     return { ok: false, detail: `itens/drops falharam: ${JSON.stringify(phaseOne)}` }
   }
+  if (!phaseOne['iaProvedores'] || !phaseOne['iaSemChave']) {
+    return { ok: false, detail: `central de IA falhou: ${JSON.stringify(phaseOne)}` }
+  }
 
   const projectId = String(phaseOne['createdId'])
 
@@ -457,6 +483,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseTwo['dropPage']) {
     return { ok: false, detail: `a página de drops não abriu: ${JSON.stringify(phaseTwo)}` }
   }
+  if (!phaseTwo['aiPage']) {
+    return { ok: false, detail: `a página de IA não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
   if (!phaseTwo['removed']) {
     return {
       ok: false,
@@ -468,7 +497,7 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
     ok: true,
     detail:
       `interface renderizada (${phaseOne['chars']} caracteres), projeto criado em ` +
-      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas, efeitos, habilidades, itens, drops e Godot ` +
+      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas, efeitos, habilidades, itens, drops, central de IA e Godot ` +
       `respondendo, banco em ${phaseOne['dbPath']}`
   }
 }

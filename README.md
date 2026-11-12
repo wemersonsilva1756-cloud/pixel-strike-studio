@@ -4,7 +4,7 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1 a 8 de 10 concluídas e testadas.**
+> **Estado atual: Etapas 1 a 9 de 10 concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
 > transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
@@ -12,8 +12,9 @@ para quem está começando.
 > **skins de armas** em pixel art com raridade separada da condição de desgaste,
 > gera **efeitos visuais animados** e **habilidades** com parâmetros e script para
 > a Godot 4, cria **itens e equipamentos** com atributos e monta **tabelas de drops**
-> com validação real de 100%. O assistente de IA **ainda não existe** — ele tem sua
-> etapa e a interface diz isso claramente, sem botões que não funcionam.
+> com validação real de 100%. A **central de IA** usa a sua própria chave (cifrada
+> pelo sistema operacional), conversa com OpenAI, Anthropic ou OpenRouter de
+> verdade e o **assistente** prepara criações com prévia antes de gravar.
 >
 > O gerador da etapa 3 é **procedural e determinístico**, não é IA: a descrição é
 > interpretada por palavras-chave. Os provedores de IA chegam na etapa 9.
@@ -55,6 +56,10 @@ para quem está começando.
 | Tabelas de drops exclusivas validadas em 100% ou independentes | Funcionando |
 | Calculadora de chances e quantidade esperada de itens | Funcionando |
 | Script GDScript de sorteio e planilha CSV de cada tabela | Funcionando |
+| Central de IA com chave cifrada pelo sistema (OpenAI, Anthropic, OpenRouter) | Funcionando |
+| Teste real da chave e do modelo escolhido | Funcionando |
+| Assistente que prepara plano de criações com prévia e confirmação | Funcionando |
+| Geração de GDScript, imagem e voz salva na pasta `ia/` do projeto | Funcionando |
 | Exportar para a Godot com prévia e backup dos substituídos | Funcionando |
 | Banco de dados local SQLite | Funcionando |
 | Backups completos com restauração | Funcionando |
@@ -62,9 +67,7 @@ para quem está começando.
 | Histórico de ações | Funcionando |
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
-| Exportar cenas geradas pelos módulos restantes | Junto com as etapas 9 e 10 |
-| Geração com inteligência artificial de verdade | Etapa 9 |
-| Provedores de IA e assistente central | Etapa 9 |
+| Exportar cenas geradas pelos módulos restantes | Junto com a etapa 10 |
 | Instalador para Windows e sistema de atualização | Etapa 10 |
 
 A tela **Etapas do desenvolvimento** (no menu lateral) mostra o plano completo e o
@@ -337,6 +340,29 @@ loot-de-inimigo-comum/
   loot-de-inimigo-comum.csv   ← planilha para conferir a economia
 ```
 
+### Assistente de IA
+
+Menu **Assistente de IA**. Esta etapa **não é uma simulação**: o Studio faz chamadas
+reais para o provedor que você escolher, com a sua chave.
+
+1. Em **Provedores**, cole a chave da OpenAI, Anthropic ou OpenRouter e clique em
+   **Salvar**. A chave é cifrada pelo armazenamento seguro do sistema
+   (`safeStorage`) antes de ir para o banco e **nunca volta para a tela**.
+2. Clique em **Testar** para fazer uma chamada mínima de verdade e conferir chave,
+   modelo e conexão.
+3. Em **Assistente de criações**, descreva o pedido, por exemplo “crie um colete
+   tático raro com 70% de armadura e uma tabela de drops para inimigo comum”.
+4. Clique em **Preparar plano**. A IA devolve um plano em JSON e **cada criação passa
+   pelos mesmos validadores das etapas 3 a 8** antes de aparecer na tela.
+5. Confira nomes e resumos e clique em **Criar no projeto**. Só então os arquivos são
+   gravados — nada é salvo sem essa confirmação.
+6. As ferramentas **Código GDScript**, **Imagem** e **Áudio (voz)** geram arquivos
+   reais em `ia/codigo/`, `ia/imagens/` e `ia/audio/`.
+
+O que **não** existe: nenhuma chave fica dentro do código, nenhuma chamada é feita
+sem a sua chave e nenhum resultado é inventado. Sem chave ou sem internet, o Studio
+mostra o motivo exato da falha.
+
 ### Gerenciador de arquivos
 
 Menu **Arquivos do projeto**. Você navega pelas pastas, vê imagens como sprites (com
@@ -377,6 +403,7 @@ O que a exportação grava hoje:
 | `pixel_strike/recursos/habilidades/...` | Ícone, quadros do efeito, ficha e script GDScript |
 | `pixel_strike/recursos/itens/...` | Ícone e ficha JSON de cada item |
 | `pixel_strike/recursos/drops/...` | Ficha JSON, script GDScript de sorteio e planilha CSV |
+| `pixel_strike/recursos/ia/...` | Scripts, imagens e áudios gerados pelo assistente |
 
 Tudo o que os geradores criam entra na exportação automaticamente — não é preciso
 copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
@@ -401,7 +428,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 262 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens e drops
+npm run test:core   # 286 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens, drops e IA
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -412,7 +439,7 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 262/262 verificações do
+Resultado da última execução desta versão: **typecheck OK, 286/286 verificações do
 núcleo, build OK, smoke OK**.
 
 ---
@@ -436,6 +463,8 @@ src/
       skills.ts         habilidades: parâmetros, ícone, efeito e script GDScript
       items.ts          itens: ícone por categoria, atributos, raridade e ficha
       drops.ts          tabelas de drops: validação de 100%, script e planilha
+      ai.ts             provedores, chave cifrada, texto, código, imagem e áudio
+      assistant.ts      plano do assistente: valida e aplica com confirmação
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -486,9 +515,9 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ## Próxima etapa
 
-**Etapa 9 — Assistente de IA e provedores:** central de provedores com chaves em
-armazenamento seguro, adaptadores independentes para imagem, texto, código e áudio, e
-assistente que interpreta pedidos e prepara arquivos sempre com prévia e autorização.
+**Etapa 10 — Testes, estabilidade e empacotamento:** revisão das validações reais,
+testes de recursos, correções finais, instalador para Windows, sistema de atualização e
+documentação completa.
 
-Nada da Etapa 9 começa antes de as etapas 1 a 8 estarem estáveis — e elas estão
+Nada da Etapa 10 começa antes de as etapas 1 a 9 estarem estáveis — e elas estão
 testadas nesta versão.

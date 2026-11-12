@@ -87,7 +87,9 @@ const STAGES: Stage[] = [
     title: 'Assistente de IA e provedores',
     description:
       'Central de provedores com chaves em armazenamento seguro, adaptadores independentes para imagem, texto, código e áudio, e assistente que interpreta pedidos e prepara arquivos com autorização.',
-    deliverable: 'Assistente funcional com prévia das mudanças e confirmação.'
+    deliverable:
+      'Entregue nesta versão: chaves de OpenAI, Anthropic ou OpenRouter cifradas pelo sistema, teste real de chave, assistente que valida cada criação antes da prévia e grava só após confirmação, e geração de GDScript, imagem e voz na pasta ia/.',
+    done: true
   },
   {
     number: 10,

@@ -535,14 +535,15 @@ function collectResourceFiles(studioProjectPath: string, warnings: string[]): Co
     'habilidades',
     'efeitos',
     'itens',
-    'drops'
+    'drops',
+    'ia'
   ]) {
     collectFolderFiles(join(studioProjectPath, folder), `${RESOURCE_ROOT}/${folder}`, files)
   }
 
   if (files.length === 0) {
     warnings.push(
-      'Nenhum recurso encontrado: as pastas godot/, personagens/, monstros/, animacoes/, mapas/, armas/, habilidades/, efeitos/, itens/ e drops/ estão vazias. Apenas a preparação (script, manifesto e instruções) será enviada.'
+      'Nenhum recurso encontrado: as pastas godot/, personagens/, monstros/, animacoes/, mapas/, armas/, habilidades/, efeitos/, itens/, drops/ e ia/ estão vazias. Apenas a preparação (script, manifesto e instruções) será enviada.'
     )
   }
 
@@ -792,7 +793,8 @@ async function rebuildFileContent(input: {
     'habilidades/',
     'efeitos/',
     'itens/',
-    'drops/'
+    'drops/',
+    'ia/'
   ].some((prefix) =>
     stripped.startsWith(prefix)
   )

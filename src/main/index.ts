@@ -1,8 +1,8 @@
-import { app, BrowserWindow, dialog } from 'electron'
+import { app, BrowserWindow, dialog, safeStorage } from 'electron'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { initializeCore, shutdownCore } from './core'
+import { initializeCore, shutdownCore, type SecretStore } from './core'
 import { registerIpcHandlers, unregisterIpcHandlers } from './ipc'
 import { hardenWindow } from './security'
 import { runSmokeTest } from './smoke'
@@ -117,12 +117,27 @@ if (!app.requestSingleInstanceLock()) {
       ? join(dataDir, 'Projetos')
       : join(app.getPath('documents'), 'Pixel Strike Studio', 'Projetos')
 
+    // As chaves de IA são cifradas pelo armazenamento seguro do sistema antes de
+    // irem para o banco. Fora do Electron (testes) o núcleo recebe outro provedor.
+    const secretStore: SecretStore = {
+      get available(): boolean {
+        try {
+          return safeStorage.isEncryptionAvailable()
+        } catch {
+          return false
+        }
+      },
+      encrypt: (value: string) => safeStorage.encryptString(value).toString('base64'),
+      decrypt: (cipher: string) => safeStorage.decryptString(Buffer.from(cipher, 'base64'))
+    }
+
     try {
       await initializeCore({
         dataDir,
         dbPath,
         workspaceRoot,
-        studioVersion: app.getVersion()
+        studioVersion: app.getVersion(),
+        secretStore
       })
     } catch (error) {
       dialog.showErrorBox(

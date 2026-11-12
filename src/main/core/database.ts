@@ -90,6 +90,18 @@ const MIGRATIONS: Migration[] = [
         last_export_at TEXT
       )`
     ]
+  },
+  {
+    version: 3,
+    statements: [
+      // Chaves de IA guardadas já cifradas pelo armazenamento seguro do sistema.
+      // Nunca há texto puro nesta tabela.
+      `CREATE TABLE ai_keys (
+        provider TEXT PRIMARY KEY,
+        cipher TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`
+    ]
   }
 ]
 

@@ -368,6 +368,25 @@ export function Dashboard(): React.JSX.Element {
                 </Button>
               </div>
             </li>
+            <li className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-ink-100">Etapa 9 · Assistente de IA</p>
+                <Badge tone="success">Concluída</Badge>
+              </div>
+              <p className="mt-1 text-xs text-ink-400">
+                Chaves cifradas pelo sistema, teste real de conexão, plano de criações com prévia
+                e geração de GDScript, imagem e voz na pasta ia/.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate({ name: 'modulo', moduleId: 'assistente' })}
+                >
+                  Abrir assistente
+                </Button>
+              </div>
+            </li>
             {nextModules.map((module) => {
               const Icon = module.icon
               return (

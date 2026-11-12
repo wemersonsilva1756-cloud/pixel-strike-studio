@@ -1,4 +1,5 @@
 import {
+  Bot,
   Boxes,
   Crosshair,
   Dices,
@@ -61,6 +62,21 @@ export interface ModuleDefinition {
  * o plano, mas cada um informa com honestidade em qual etapa será entregue.
  */
 export const MODULES: ModuleDefinition[] = [
+  {
+    id: 'assistente',
+    title: 'Assistente de IA',
+    stage: 9,
+    icon: Bot,
+    summary:
+      'Central de provedores com chaves guardadas pela criptografia do sistema, assistente que prepara criações com prévia e confirmação, e geração real de código, imagem e voz.',
+    planned: [
+      'Chave de cada provedor salva cifrada pelo sistema, nunca visível na interface',
+      'Teste real de chave com uma chamada ao provedor',
+      'Assistente que transforma um pedido em plano de itens, drops, efeitos, habilidades e skins',
+      'Prévia do plano e criação somente após confirmação',
+      'Geração de script GDScript, imagem e áudio salva dentro do projeto'
+    ]
+  },
   {
     id: 'godot',
     title: 'Integração com Godot 4',

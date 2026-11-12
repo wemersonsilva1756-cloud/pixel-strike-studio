@@ -11,6 +11,7 @@ import { configureEffects } from './effects'
 import { configureSkills } from './skills'
 import { configureItems } from './items'
 import { configureDrops } from './drops'
+import { configureAi, type SecretStore } from './ai'
 import { ensureDir } from './filesystem'
 
 export * from './database'
@@ -33,6 +34,8 @@ export * from './effects'
 export * from './skills'
 export * from './items'
 export * from './drops'
+export * from './ai'
+export * from './assistant'
 
 /**
  * Inicializa o núcleo local (banco de dados + serviços).
@@ -44,6 +47,8 @@ export interface CoreOptions {
   dbPath: string
   workspaceRoot: string
   studioVersion: string
+  /** Armazenamento seguro do sistema para as chaves de IA (safeStorage no Electron). */
+  secretStore?: SecretStore | null
 }
 
 let initialized = false
@@ -71,6 +76,7 @@ export async function initializeCore(options: CoreOptions): Promise<void> {
   configureSkills({ trashDir })
   configureItems({ trashDir })
   configureDrops({ trashDir })
+  configureAi({ secretStore: options.secretStore ?? null })
 
   initialized = true
 }

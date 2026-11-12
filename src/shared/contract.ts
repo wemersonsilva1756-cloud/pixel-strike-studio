@@ -18,6 +18,20 @@ import type { EffectAsset, EffectPreview, EffectSpec } from './effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from './skills'
 import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from './items'
 import type { DropTableAsset, DropTableSpec, DropTableStats } from './drops'
+import type {
+  AiAudioResult,
+  AiCodeResult,
+  AiFileEntry,
+  AiImageResult,
+  AiImageSize,
+  AiProviderId,
+  AiProvidersView,
+  AiTestResult,
+  AiTextResult,
+  SaveAiProviderInput,
+  AssistantApplyResult,
+  AssistantPlan
+} from './ai'
 
 /**
  * Contrato compartilhado entre o processo principal (Node) e a interface (React).
@@ -320,6 +334,21 @@ export interface StudioApi {
     list(projectId: string): Promise<DropTableAsset[]>
     remove(assetId: string): Promise<void>
   }
+  ai: {
+    providers(): Promise<AiProvidersView>
+    saveProvider(input: SaveAiProviderInput): Promise<AiProvidersView>
+    removeKey(provider: AiProviderId): Promise<AiProvidersView>
+    test(provider: AiProviderId): Promise<AiTestResult>
+    text(prompt: string, system?: string): Promise<AiTextResult>
+    code(projectId: string, prompt: string): Promise<AiCodeResult>
+    image(projectId: string, prompt: string, size: AiImageSize): Promise<AiImageResult>
+    audio(projectId: string, text: string): Promise<AiAudioResult>
+    files(projectId: string): Promise<AiFileEntry[]>
+  }
+  assistant: {
+    plan(projectId: string, request: string): Promise<AssistantPlan>
+    apply(projectId: string, plan: AssistantPlan): Promise<AssistantApplyResult>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -407,5 +436,16 @@ export const IPC = {
   dropsSave: 'studio:drops:save',
   dropsList: 'studio:drops:list',
   dropsRemove: 'studio:drops:remove',
+  aiProviders: 'studio:ai:providers',
+  aiSaveProvider: 'studio:ai:save-provider',
+  aiRemoveKey: 'studio:ai:remove-key',
+  aiTest: 'studio:ai:test',
+  aiText: 'studio:ai:text',
+  aiCode: 'studio:ai:code',
+  aiImage: 'studio:ai:image',
+  aiAudio: 'studio:ai:audio',
+  aiFiles: 'studio:ai:files',
+  assistantPlan: 'studio:assistant:plan',
+  assistantApply: 'studio:assistant:apply',
   eventProgress: 'studio:event:progress'
 } as const

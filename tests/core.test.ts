@@ -16,14 +16,30 @@ import {
   mkdtempSync
 } from 'node:fs'
 import { inflateSync } from 'node:zlib'
+import { createServer } from 'node:http'
+import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   applyGodotExport,
   backupProject,
   buildGodotExportPlan,
+  applyPlan,
   buildDropScript,
   buildSkillScript,
+  configureAi,
+  encodePng,
+  generateAudio,
+  generateCode,
+  generateImage,
+  generateText,
+  listAiFiles,
+  listAiProviders,
+  planCreations,
+  queryOne,
+  removeAiKey,
+  saveAiProvider,
+  testAiProvider,
   compareWeapon,
   dropTableSummaryStats,
   listAnimations,
@@ -112,6 +128,17 @@ function ok(condition: boolean, message: string): void {
   console.log(`  ok  ${message}`)
 }
 
+// Armazenamento seguro de teste: a interface é a mesma do safeStorage, só a
+// cifra é simples. O que importa aqui é que a chave nunca fica em texto puro.
+const testSecretStore = {
+  available: true,
+  encrypt: (value: string): string => `test:${Buffer.from(value, 'utf8').toString('base64')}`,
+  decrypt: (cipher: string): string => {
+    if (!cipher.startsWith('test:')) throw new Error('Cifra desconhecida.')
+    return Buffer.from(cipher.slice(5), 'base64').toString('utf8')
+  }
+}
+
 async function main(): Promise<void> {
   console.log('Pixel Strike Studio - testes do núcleo')
 
@@ -119,7 +146,8 @@ async function main(): Promise<void> {
     dataDir,
     dbPath: join(dataDir, 'studio.db'),
     workspaceRoot,
-    studioVersion: '0.1.0-test'
+    studioVersion: '0.1.0-test',
+    secretStore: testSecretStore
   })
   ok(existsSync(join(dataDir, 'studio.db')), 'banco de dados criado no disco')
 
@@ -1319,6 +1347,228 @@ async function main(): Promise<void> {
     readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('colete-de-teste')),
     'item removido vai para a lixeira interna'
   )
+
+  // --- Central de IA e assistente (etapa 9) -----------------------------
+  const aiKey = 'sk-teste-1234567890abcdef'
+  let chatAnswer = 'ok'
+  const pngResposta = encodePng(2, 2, new Uint8Array(16).fill(255))
+
+  const fakeProvider = createServer((request, response) => {
+    if (request.headers.authorization !== `Bearer ${aiKey}`) {
+      response.writeHead(401, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ error: { message: 'invalid api key' } }))
+      return
+    }
+
+    request.on('data', () => undefined)
+    request.on('end', () => {
+      if (request.url?.endsWith('/chat/completions')) {
+        response.writeHead(200, { 'content-type': 'application/json' })
+        response.end(
+          JSON.stringify({ choices: [{ message: { role: 'assistant', content: chatAnswer } }] })
+        )
+        return
+      }
+      if (request.url?.endsWith('/images/generations')) {
+        response.writeHead(200, { 'content-type': 'application/json' })
+        response.end(
+          JSON.stringify({ data: [{ b64_json: pngResposta.toString('base64') }] })
+        )
+        return
+      }
+      if (request.url?.endsWith('/audio/speech')) {
+        response.writeHead(200, { 'content-type': 'audio/mpeg' })
+        response.end(Buffer.from('ID3-falso-para-teste'))
+        return
+      }
+      response.writeHead(404, { 'content-type': 'application/json' })
+      response.end('{}')
+    })
+  })
+
+  await new Promise<void>((resolve) => fakeProvider.listen(0, '127.0.0.1', () => resolve()))
+  const fakePort = (fakeProvider.address() as AddressInfo).port
+  configureAi({ baseUrls: { openai: `http://127.0.0.1:${fakePort}/v1` } })
+
+  try {
+    const aiInicial = await listAiProviders()
+    ok(
+      aiInicial.providers.length === 3 &&
+        aiInicial.providers.every((provider) => !provider.configured) &&
+        aiInicial.preferred === null,
+      'central de IA começa sem nenhum provedor configurado'
+    )
+    ok(aiInicial.secureStorage, 'central de IA informa o armazenamento seguro disponível')
+
+    const aiComChave = await saveAiProvider({ provider: 'openai', key: aiKey })
+    const openAiState = aiComChave.providers.find((provider) => provider.id === 'openai')
+    ok(
+      openAiState?.configured === true && Boolean(openAiState?.keySavedAt),
+      'chave salva deixa o provedor configurado'
+    )
+    ok(
+      !JSON.stringify(aiComChave).includes(aiKey),
+      'a chave nunca volta para a interface'
+    )
+    const cipherRow = await queryOne<{ cipher: string }>(
+      'SELECT cipher FROM ai_keys WHERE provider = ?',
+      ['openai']
+    )
+    ok(
+      cipherRow !== null && cipherRow.cipher !== aiKey && !cipherRow.cipher.includes(aiKey),
+      'o banco guarda a chave cifrada, nunca em texto puro'
+    )
+
+    const testeIa = await testAiProvider('openai')
+    ok(
+      testeIa.ok && testeIa.message.includes('OpenAI') && testeIa.latencyMs >= 0,
+      'teste da chave faz uma chamada real e mede o tempo'
+    )
+
+    const textoIa = await generateText({ prompt: 'Escreva uma frase' })
+    ok(textoIa.text === 'ok', 'geração de texto devolve a resposta do provedor')
+
+    await saveAiProvider({ provider: 'openai', key: 'chave-errada-1234567890' })
+    await assert.rejects(() => testAiProvider('openai'), /recusou a chave/)
+    checks += 1
+    console.log('  ok  chave inválida é recusada com mensagem clara')
+    await saveAiProvider({ provider: 'openai', key: aiKey })
+
+    chatAnswer = 'isto não é json'
+    await assert.rejects(
+      () => planCreations({ projectId: project.id, request: 'crie um colete raro' }),
+      /JSON válido/
+    )
+    checks += 1
+    console.log('  ok  resposta sem JSON é recusada no plano')
+
+    chatAnswer = JSON.stringify({
+      resumo: 'Um colete e uma tabela de drops.',
+      criacoes: [
+        {
+          tipo: 'item',
+          especificacao: {
+            name: 'Colete do Assistente',
+            category: 'colete',
+            rarity: 'raro',
+            attributes: { armadura: 70, durabilidade: 90, valor: 1200 }
+          }
+        },
+        {
+          tipo: 'drops',
+          especificacao: {
+            name: 'Drops do Assistente',
+            source: 'monstro',
+            mode: 'exclusiva',
+            entries: [
+              { itemName: 'Seringa', rarity: 'comum', chance: 40, min: 1, max: 2 },
+              { itemName: 'Colete', rarity: 'raro', chance: 40, min: 1, max: 1 },
+              { itemName: 'Kit', rarity: 'incomum', chance: 40, min: 1, max: 1 }
+            ]
+          }
+        }
+      ]
+    })
+
+    const plano = await planCreations({ projectId: project.id, request: 'crie um colete e drops' })
+    ok(
+      plano.steps.length === 2 && plano.steps.every((step) => step.problem === null),
+      'plano do assistente traz as criações já validadas'
+    )
+    const etapaItem = plano.steps.find((step) => step.kind === 'item')
+    ok(
+      etapaItem?.name === 'Colete do Assistente',
+      'plano usa o nome pedido para o item'
+    )
+    const etapaDrops = plano.steps.find((step) => step.kind === 'drops')
+    const dropsPayload = etapaDrops?.payload as { entries: Array<{ chance: number }> } | undefined
+    ok(
+      dropsPayload !== undefined &&
+        Math.abs(dropsPayload.entries.reduce((sum, entry) => sum + entry.chance, 0) - 100) < 0.01,
+      'assistente reajusta as chances exclusivas para 100%'
+    )
+
+    const aplicado = await applyPlan(project.id, plano)
+    ok(
+      aplicado.created.length === 2 && aplicado.skipped.length === 0,
+      'confirmar o plano cria os assets de verdade'
+    )
+    ok(
+      existsSync(join(project.path, 'itens', 'colete-do-assistente', 'colete-do-assistente_icone.png')) &&
+        existsSync(join(project.path, 'drops', 'drops-do-assistente', 'drops-do-assistente.gd')),
+      'arquivos do plano ficam nas pastas do projeto'
+    )
+
+    chatAnswer = JSON.stringify({
+      codigo: 'extends Node\n\nfunc abrir() -> void:\n\tprint("abriu")\n',
+      explicacao: 'Script simples de porta.'
+    })
+    const codigo = await generateCode({ projectId: project.id, prompt: 'porta que abre' })
+    ok(
+      codigo.code.includes('extends Node') && codigo.code.includes('func abrir'),
+      'gerador de código devolve GDScript pronto'
+    )
+    ok(
+      codigo.relativePath !== null && existsSync(join(project.path, codigo.relativePath)),
+      'script gerado é salvo em ia/codigo/'
+    )
+
+    const imagem = await generateImage({
+      projectId: project.id,
+      prompt: 'soldado em pixel art',
+      size: '1024x1024'
+    })
+    ok(
+      imagem.dataUrl.startsWith('data:image/png;base64,') &&
+        existsSync(join(project.path, imagem.relativePath)),
+      'imagem gerada é salva em ia/imagens/'
+    )
+    const imagemPng = pngInfo(readFileSync(join(project.path, imagem.relativePath)))
+    ok(imagemPng.width === 2 && imagemPng.height === 2, 'bytes da imagem são gravados sem alteração')
+
+    const audio = await generateAudio({ projectId: project.id, text: 'bem-vindo' })
+    ok(
+      audio.bytes > 0 && existsSync(join(project.path, audio.relativePath)),
+      'áudio gerado é salvo em ia/audio/'
+    )
+
+    const arquivosIa = await listAiFiles(project.id)
+    ok(
+      arquivosIa.length === 3 &&
+        arquivosIa.some((file) => file.kind === 'imagem') &&
+        arquivosIa.some((file) => file.kind === 'codigo') &&
+        arquivosIa.some((file) => file.kind === 'audio'),
+      'lista de arquivos da IA mostra imagem, código e áudio'
+    )
+
+    const planComIa = await buildGodotExportPlan(project.id)
+    ok(
+      planComIa.files.some((file) => file.relativePath.startsWith('pixel_strike/recursos/ia/')),
+      'arquivos da IA entram na exportação da Godot'
+    )
+
+    const semChave = await removeAiKey('openai')
+    ok(
+      semChave.providers.every((provider) => !provider.configured),
+      'remover a chave desconfigura o provedor'
+    )
+    await assert.rejects(
+      () => generateText({ prompt: 'oi' }),
+      /Nenhum provedor de IA está configurado/
+    )
+    checks += 1
+    console.log('  ok  sem chave, a geração explica que falta configurar')
+
+    configureAi({ secretStore: { ...testSecretStore, available: false } })
+    await assert.rejects(
+      () => saveAiProvider({ provider: 'openai', key: aiKey }),
+      /armazenamento seguro/)
+    checks += 1
+    console.log('  ok  sem armazenamento seguro a chave não é salva')
+    configureAi({ secretStore: testSecretStore })
+  } finally {
+    await new Promise<void>((resolve) => fakeProvider.close(() => resolve()))
+  }
 
   // --- Remoção segura -----------------------------------------------------
   await removeProject(project.id, true)

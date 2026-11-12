@@ -58,6 +58,9 @@ Regras que sustentam essa divisão:
 | `src/shared/items.ts` | Categorias, raridades, atributos, faixas e interpretação de descrição |
 | `src/main/core/drops.ts` | Tabelas de drops: validação de 100%, script GDScript e CSV |
 | `src/shared/drops.ts` | Modelos de drop, calculadora de chances e normalização |
+| `src/main/core/ai.ts` | Provedores, chave cifrada, chat, código, imagem e áudio |
+| `src/main/core/assistant.ts` | Plano do assistente: prompt, validação e aplicação |
+| `src/shared/ai.ts` | Catálogo de provedores, capacidades e tipos do assistente |
 | `src/main/core/png.ts` | Codificador PNG RGBA com `zlib` (sem dependências externas) |
 | `src/main/smoke.ts` | Teste automático em duas fases (com recarga da janela) |
 | `src/main/core/settings-store.ts` | Preferências em tabela chave/valor |
@@ -127,6 +130,12 @@ arbitrário da interface: o núcleo sempre resolve os caminhos a partir do banco
 | `studio:items:save` / `list` / `remove` | grava em `itens/`, lista e move para a lixeira |
 | `studio:drops:stats` | calculadora de chances e quantidade esperada |
 | `studio:drops:save` / `list` / `remove` | grava JSON, `.gd` e CSV em `drops/` |
+| `studio:ai:providers` | estado dos provedores, sem nenhuma chave |
+| `studio:ai:save-provider` | cifra a chave com o armazenamento seguro e salva |
+| `studio:ai:remove-key` | apaga a chave do banco |
+| `studio:ai:test` | chamada mínima real ao provedor |
+| `studio:ai:text` / `code` / `image` / `audio` | gerações reais |
+| `studio:assistant:plan` / `apply` | plano validado e criação confirmada |
 | `studio:event:progress` | evento (main → renderer) de operações longas |
 
 `studio:app:smoke-ready` é o único canal `send` (sem resposta), usado pelo teste
@@ -383,6 +392,28 @@ O mapa é uma grade de tiles com dados que a Godot entende de verdade.
   `drops/<slug>/` com ficha JSON, planilha CSV e um GDScript com `sortear()` — por
   faixa acumulada no modo exclusivo, rolagem individual no independente.
 - A exportação copia `itens/` e `drops/` para `pixel_strike/recursos/`.
+
+## Central de IA e assistente (etapa 9)
+
+- `src/shared/ai.ts` lista os provedores (OpenAI, Anthropic, OpenRouter), as
+  capacidades de cada um (texto, código, imagem, áudio) e os tipos do assistente.
+- `ai.ts` guarda a chave cifrada na tabela `ai_keys` (migração 3). A cifra vem de um
+  `SecretStore` injetado: no Electron é o `safeStorage`, que usa o cofre do sistema;
+  nos testes é um duplo com a mesma interface. **Se o armazenamento seguro não estiver
+  disponível, a chave é recusada** em vez de ser gravada em texto puro.
+- A chave só é lida no processo principal, no momento da chamada. Ela não faz parte
+  do contrato do IPC de leitura, não entra em registros de atividade e não aparece nos
+  logs de erro.
+- Cada provedor tem o seu formato: OpenAI/OpenRouter usam `/chat/completions` e a
+  Anthropic usa `/messages` com `x-api-key`. Toda chamada tem tempo limite e traduz
+  401/403, 404, 429, 5xx e falha de rede em mensagens em português.
+- O assistente (`assistant.ts`) pede um JSON com `criacoes` e valida **cada** criação
+  com o gerador correspondente: item, drops, efeito, habilidade ou arma. Tabelas
+  exclusivas têm as chances reajustadas para 100% antes da validação.
+- `planCreations` não grava nada; `applyPlan` só roda depois da confirmação e devolve
+  a lista do que foi criado e do que foi ignorado, com o motivo.
+- Código, imagens e áudios ficam em `ia/codigo/`, `ia/imagens/` e `ia/audio/` e entram
+  na exportação para a Godot.
 
 ## Teste automático do Electron (`npm run smoke`)
 

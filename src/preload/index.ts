@@ -19,6 +19,20 @@ import type { EffectAsset, EffectPreview, EffectSpec } from '@shared/effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from '@shared/skills'
 import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from '@shared/items'
 import type { DropTableAsset, DropTableSpec, DropTableStats } from '@shared/drops'
+import type {
+  AiAudioResult,
+  AiCodeResult,
+  AiFileEntry,
+  AiImageResult,
+  AiImageSize,
+  AiProviderId,
+  AiProvidersView,
+  AiTestResult,
+  AiTextResult,
+  SaveAiProviderInput,
+  AssistantApplyResult,
+  AssistantPlan
+} from '@shared/ai'
 import {
   IPC,
   type ActivityEntry,
@@ -176,6 +190,29 @@ const api: StudioApi = {
       invoke<DropTableAsset>(IPC.dropsSave, projectId, spec),
     list: (projectId: string) => invoke<DropTableAsset[]>(IPC.dropsList, projectId),
     remove: (assetId: string) => invoke<void>(IPC.dropsRemove, assetId)
+  },
+  ai: {
+    providers: () => invoke<AiProvidersView>(IPC.aiProviders),
+    saveProvider: (input: SaveAiProviderInput) =>
+      invoke<AiProvidersView>(IPC.aiSaveProvider, input),
+    removeKey: (provider: AiProviderId) =>
+      invoke<AiProvidersView>(IPC.aiRemoveKey, provider),
+    test: (provider: AiProviderId) => invoke<AiTestResult>(IPC.aiTest, provider),
+    text: (prompt: string, system?: string) =>
+      invoke<AiTextResult>(IPC.aiText, prompt, system),
+    code: (projectId: string, prompt: string) =>
+      invoke<AiCodeResult>(IPC.aiCode, projectId, prompt),
+    image: (projectId: string, prompt: string, size: AiImageSize) =>
+      invoke<AiImageResult>(IPC.aiImage, projectId, prompt, size),
+    audio: (projectId: string, text: string) =>
+      invoke<AiAudioResult>(IPC.aiAudio, projectId, text),
+    files: (projectId: string) => invoke<AiFileEntry[]>(IPC.aiFiles, projectId)
+  },
+  assistant: {
+    plan: (projectId: string, request: string) =>
+      invoke<AssistantPlan>(IPC.assistantPlan, projectId, request),
+    apply: (projectId: string, plan: AssistantPlan) =>
+      invoke<AssistantApplyResult>(IPC.assistantApply, projectId, plan)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),
