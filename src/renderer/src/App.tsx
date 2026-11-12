@@ -8,7 +8,9 @@ import { Button, ProgressBar } from './components/ui'
 import { AnimationsPage } from './pages/AnimationsPage'
 import { CharactersPage } from './pages/CharactersPage'
 import { Dashboard } from './pages/Dashboard'
+import { DropsPage } from './pages/DropsPage'
 import { EffectsPage } from './pages/EffectsPage'
+import { ItemsPage } from './pages/ItemsPage'
 import { FilesPage } from './pages/FilesPage'
 import { GodotPage } from './pages/GodotPage'
 import { HelpPage } from './pages/HelpPage'
@@ -144,6 +146,8 @@ function CurrentPage(): React.JSX.Element {
       if (route.moduleId === 'armas') return <WeaponsPage />
       if (route.moduleId === 'habilidades') return <SkillsPage />
       if (route.moduleId === 'efeitos') return <EffectsPage />
+      if (route.moduleId === 'itens') return <ItemsPage />
+      if (route.moduleId === 'drops') return <DropsPage />
       return <ModulePage moduleId={route.moduleId} />
     case 'configuracoes':
       return <SettingsPage />

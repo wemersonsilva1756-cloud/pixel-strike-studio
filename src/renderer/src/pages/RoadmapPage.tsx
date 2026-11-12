@@ -78,7 +78,9 @@ const STAGES: Stage[] = [
     title: 'Drops, itens e economia',
     description:
       'Itens e equipamentos, tabelas de recompensas, caixas, calculadora de probabilidades e validação real dos 100%.',
-    deliverable: 'Economia do jogo configurada e exportada.'
+    deliverable:
+      'Entregue nesta versão: 7 categorias de item com ícone em pixel art, raridade separada dos atributos e ficha JSON; tabelas de drops exclusivas (100% validado) ou independentes com calculadora, script GDScript e planilha CSV.',
+    done: true
   },
   {
     number: 9,

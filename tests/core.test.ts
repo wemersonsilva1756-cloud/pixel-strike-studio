@@ -22,29 +22,40 @@ import {
   applyGodotExport,
   backupProject,
   buildGodotExportPlan,
+  buildDropScript,
   buildSkillScript,
   compareWeapon,
+  dropTableSummaryStats,
   listAnimations,
+  listDropTables,
   listEffects,
+  listItems,
   listSkills,
   listMaps,
   listWeapons,
   loadMap,
   previewAnimation,
   previewEffect,
+  previewItem,
   previewMap,
   previewSkill,
   previewWeapon,
   proposeMapConfig,
+  removeDropTable,
   removeEffect,
+  removeItem,
   removeMap,
   removeSkill,
   removeWeapon,
+  saveDropTable,
   saveEffect,
+  saveItem,
   saveMap,
   saveSkill,
   saveWeapon,
+  validateDropTable,
   validateEffectSpec,
+  validateItemSpec,
   validateMapConfig,
   validateSkillSpec,
   validateWeaponSpec,
@@ -87,6 +98,8 @@ import { defaultSpec } from '../src/shared/characters'
 import { proposeMap } from '../src/shared/maps'
 import { defaultColors, interpretWeapon, wearForFloat } from '../src/shared/weapons'
 import { interpretSkill } from '../src/shared/skills'
+import { defaultDropTable, dropTableStats, normalizeEntries } from '../src/shared/drops'
+import { interpretItem } from '../src/shared/items'
 
 const root = mkdtempSync(join(tmpdir(), 'pixel-strike-test-'))
 const dataDir = join(root, 'dados')
@@ -1094,6 +1107,217 @@ async function main(): Promise<void> {
   ok(
     readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('granada-de-teste')),
     'habilidade removida vai para a lixeira interna'
+  )
+
+  // --- Itens e equipamentos (etapa 8) -----------------------------------
+  const itemSpec = {
+    category: 'colete' as const,
+    name: 'Colete de Teste',
+    description: 'colete de 80 de armadura',
+    rarity: 'raro' as const,
+    attributes: { armadura: 80, capacidade: 0, cura: 0, durabilidade: 60, valor: 1500 },
+    colors: { primaria: '#3f6212', secundaria: '#1c2a10' },
+    seed: 7,
+    size: 64 as const
+  }
+
+  const itemPreview = await previewItem(itemSpec)
+  ok(itemPreview.icon.startsWith('data:image/png;base64,'), 'prévia do item devolve ícone')
+  const itemIconPng = pngInfo(Buffer.from(itemPreview.icon.split(',')[1] ?? '', 'base64'))
+  ok(
+    itemIconPng.width === 64 && itemIconPng.height === 64 && itemIconPng.colorType === 6,
+    'ícone do item sai em 64x64 com transparência'
+  )
+  ok(
+    (await previewItem(itemSpec)).icon === itemPreview.icon,
+    'mesma semente gera o mesmo ícone de item'
+  )
+  ok(
+    (await previewItem({ ...itemSpec, seed: 99 })).icon !== itemPreview.icon,
+    'semente diferente muda o desenho do item'
+  )
+  ok(
+    (await previewItem({ ...itemSpec, attributes: { ...itemSpec.attributes, durabilidade: 5 } }))
+      .icon !== itemPreview.icon,
+    'durabilidade baixa adiciona marcas de desgaste'
+  )
+
+  const clampedItem = validateItemSpec({
+    ...itemSpec,
+    attributes: { ...itemSpec.attributes, armadura: 999, valor: -20 }
+  })
+  ok(
+    clampedItem.attributes.armadura === 100 && clampedItem.attributes.valor === 0,
+    'atributos do item são limitados às faixas'
+  )
+
+  assert.throws(() => validateItemSpec({ ...itemSpec, name: 'a' }), /pelo menos 2/)
+  checks += 1
+  console.log('  ok  nome curto é recusado no editor de itens')
+
+  const itemSuggestion = interpretItem('seringa que cura 40')
+  ok(
+    itemSuggestion.category === 'seringa' && itemSuggestion.attributes?.cura === 40,
+    'descrição escolhe categoria e cura do item'
+  )
+  ok(
+    interpretItem('colete com 80 de armadura').attributes?.armadura === 80,
+    'descrição lê o número de armadura'
+  )
+
+  const savedItem = await saveItem(project.id, itemSpec)
+  ok(
+    existsSync(join(project.path, 'itens', 'colete-de-teste', 'colete-de-teste_icone.png')),
+    'ícone do item salvo na pasta itens/'
+  )
+  const itemSheet = JSON.parse(
+    readFileSync(join(project.path, 'itens', 'colete-de-teste', 'colete-de-teste.json'), 'utf8')
+  ) as {
+    categoria: string
+    raridade: string
+    atributos: { armadura: number; durabilidade: number }
+    resumo: string
+  }
+  ok(
+    itemSheet.categoria === 'colete' && itemSheet.raridade === 'raro',
+    'ficha do item guarda categoria e raridade separadas'
+  )
+  ok(
+    itemSheet.atributos.armadura === 80 && itemSheet.atributos.durabilidade === 60,
+    'ficha do item guarda os atributos reais'
+  )
+  ok(itemSheet.resumo.includes('80% de armadura'), 'ficha traz o resumo legível do item')
+  ok((await listItems(project.id)).length === 1, 'item aparece na lista do projeto')
+
+  // --- Tabelas de drops (etapa 8) ---------------------------------------
+  const defaultTable = defaultDropTable()
+  const defaultStats = dropTableStats(defaultTable)
+  ok(
+    defaultStats.valid && defaultStats.totalChance === 100,
+    'tabela padrão de drops é válida e soma 100%'
+  )
+
+  assert.throws(
+    () =>
+      validateDropTable({
+        ...defaultTable,
+        entries: defaultTable.entries.map((entry, index) =>
+          index === 0 ? { ...entry, chance: 40 } : entry
+        )
+      }),
+    /100%/
+  )
+  checks += 1
+  console.log('  ok  tabela exclusiva que não soma 100% é recusada')
+
+  const normalized = normalizeEntries(
+    defaultTable.entries.map((entry, index) => (index === 0 ? { ...entry, chance: 40 } : entry))
+  )
+  ok(
+    Math.abs(normalized.reduce((sum, entry) => sum + entry.chance, 0) - 100) < 0.01,
+    'botão de distribuir deixa as chances em exatamente 100%'
+  )
+
+  const independentTable = {
+    ...defaultTable,
+    name: 'Loot independente de teste',
+    mode: 'independente' as const,
+    entries: defaultTable.entries.map((entry) => ({ ...entry, chance: 50 }))
+  }
+  const independentStats = dropTableStats(independentTable)
+  ok(
+    independentStats.valid && independentStats.totalChance === 150,
+    'modo independente aceita soma acima de 100%'
+  )
+
+  const twoRolls = dropTableStats({ ...defaultTable, rolls: 2 })
+  const firstEntry = twoRolls.entries[0]
+  ok(
+    firstEntry !== undefined && Math.abs(firstEntry.atLeastOne - 0.75) < 0.0001,
+    'calculadora acerta a chance de sair ao menos uma vez em duas aberturas'
+  )
+  ok(
+    firstEntry !== undefined && Math.abs(firstEntry.expected - 1.5) < 0.0001,
+    'calculadora acerta a quantidade esperada de itens'
+  )
+
+  const clampedTable = validateDropTable({
+    ...independentTable,
+    entries: independentTable.entries.map((entry) => ({ ...entry, chance: 500, max: 0 }))
+  })
+  ok(
+    clampedTable.entries.every((entry) => entry.chance === 100 && entry.max >= entry.min),
+    'chances e quantidades são limitadas na validação'
+  )
+  ok(
+    dropTableSummaryStats(defaultTable).totalChance === 100,
+    'resumo da tabela devolve o total de chances'
+  )
+
+  const savedTable = await saveDropTable(project.id, defaultTable)
+  const dropFolder = join(project.path, 'drops', 'loot-de-inimigo-comum')
+  ok(
+    existsSync(join(dropFolder, 'loot-de-inimigo-comum.json')),
+    'ficha da tabela de drops salva na pasta drops/'
+  )
+  ok(
+    existsSync(join(dropFolder, 'loot-de-inimigo-comum.gd')) &&
+      existsSync(join(dropFolder, 'loot-de-inimigo-comum.csv')),
+    'script GDScript e planilha CSV são gerados junto'
+  )
+  const dropScript = readFileSync(join(dropFolder, 'loot-de-inimigo-comum.gd'), 'utf8')
+  ok(
+    dropScript.includes('func sortear') && dropScript.includes('acumulado'),
+    'script exclusivo sorteia por faixa acumulada'
+  )
+  ok(
+    buildDropScript(independentTable, 'teste').includes('resultado.append_array'),
+    'script independente sorteia cada item separadamente'
+  )
+  const dropCsv = readFileSync(join(dropFolder, 'loot-de-inimigo-comum.csv'), 'utf8')
+  ok(
+    dropCsv.startsWith('item;raridade;chance;min;max') && dropCsv.includes('Seringa;comum;50.00'),
+    'planilha CSV usa ponto e vírgula e as chances reais'
+  )
+  ok((await listDropTables(project.id)).length === 1, 'tabela aparece na lista do projeto')
+
+  const planWithItems = await buildGodotExportPlan(project.id)
+  ok(
+    planWithItems.files.some((file) =>
+      file.relativePath.endsWith('itens/colete-de-teste/colete-de-teste_icone.png')
+    ),
+    'item entra na exportação da Godot'
+  )
+  ok(
+    planWithItems.files.some((file) =>
+      file.relativePath.endsWith('drops/loot-de-inimigo-comum/loot-de-inimigo-comum.gd')
+    ),
+    'script da tabela de drops entra na exportação'
+  )
+
+  await applyGodotExport(project.id)
+  ok(
+    existsSync(
+      join(godotDir, 'pixel_strike', 'recursos', 'itens', 'colete-de-teste', 'colete-de-teste_icone.png')
+    ),
+    'exportação copia o item para a Godot'
+  )
+
+  await removeItem(savedItem.id)
+  await removeDropTable(savedTable.id)
+  ok(
+    (await listItems(project.id)).length === 0 &&
+      (await listDropTables(project.id)).length === 0,
+    'item e tabela removidos saem da lista'
+  )
+  ok(
+    !existsSync(join(project.path, 'itens', 'colete-de-teste')) &&
+      !existsSync(join(project.path, 'drops', 'loot-de-inimigo-comum')),
+    'pastas do item e da tabela saem do projeto'
+  )
+  ok(
+    readdirSync(join(dataDir, 'lixeira')).some((name) => name.includes('colete-de-teste')),
+    'item removido vai para a lixeira interna'
   )
 
   // --- Remoção segura -----------------------------------------------------

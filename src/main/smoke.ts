@@ -42,7 +42,10 @@ const PHASE_ONE = `(async () => {
     efeitoQuadros: 0,
     efeitoSalvo: false,
     skillIcone: false,
-    skillSalva: false
+    skillSalva: false,
+    itemIcone: false,
+    itemSalvo: false,
+    dropsSalva: false
   }
 
   try {
@@ -171,6 +174,37 @@ const PHASE_ONE = `(async () => {
     await window.studio.skills.save(created.id, skillSpec)
     info.skillSalva = (await window.studio.skills.list(created.id)).length === 1
 
+    const itemSpec = {
+      category: 'colete',
+      name: 'Item de teste',
+      description: 'colete de 60 de armadura',
+      rarity: 'raro',
+      attributes: { armadura: 60, capacidade: 0, cura: 0, durabilidade: 80, valor: 900 },
+      colors: { primaria: '#3f6212', secundaria: '#1c2a10' },
+      seed: 8,
+      size: 32
+    }
+    const itemPreview = await window.studio.items.preview(itemSpec)
+    info.itemIcone = String(itemPreview.icon).startsWith('data:image/png;base64,')
+    await window.studio.items.save(created.id, itemSpec)
+    info.itemSalvo = (await window.studio.items.list(created.id)).length === 1
+
+    const dropSpec = {
+      name: 'Drops de teste',
+      description: 'tabela de teste do smoke',
+      source: 'monstro',
+      mode: 'exclusiva',
+      rolls: 1,
+      entries: [
+        { id: 'a', itemName: 'Seringa', rarity: 'comum', chance: 70, min: 1, max: 2 },
+        { id: 'b', itemName: 'Colete', rarity: 'raro', chance: 30, min: 1, max: 1 }
+      ]
+    }
+    const dropStats = await window.studio.drops.stats(dropSpec)
+    await window.studio.drops.save(created.id, dropSpec)
+    info.dropsSalva =
+      dropStats.valid && (await window.studio.drops.list(created.id)).length === 1
+
     await window.studio.settings.update({ onboardingDone: true })
   } catch (error) {
     info.error = String(error && error.message ? error.message : error)
@@ -196,6 +230,8 @@ function phaseTwoScript(projectId: string): string {
       weaponPage: false,
       effectPage: false,
       skillPage: false,
+      itemPage: false,
+      dropPage: false,
       removed: false
     }
 
@@ -280,6 +316,24 @@ function phaseTwoScript(projectId: string): string {
     info.skillPage =
       skillText.includes('Parâmetros') && skillText.includes('Habilidades salvas')
 
+    const itemNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Itens e Equipamentos'
+    )
+    itemNav?.click()
+    await esperar(2000)
+    const itemText = document.body.innerText
+    info.itemPage =
+      itemText.includes('Prévia do ícone') && itemText.includes('Itens salvos')
+
+    const dropNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Drops e Economia'
+    )
+    dropNav?.click()
+    await esperar(2000)
+    const dropText = document.body.innerText
+    info.dropPage =
+      dropText.includes('Calculadora de chances') && dropText.includes('Tabelas salvas')
+
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
     return info
@@ -347,6 +401,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   ) {
     return { ok: false, detail: `efeitos/habilidades falharam: ${JSON.stringify(phaseOne)}` }
   }
+  if (!phaseOne['itemIcone'] || !phaseOne['itemSalvo'] || !phaseOne['dropsSalva']) {
+    return { ok: false, detail: `itens/drops falharam: ${JSON.stringify(phaseOne)}` }
+  }
 
   const projectId = String(phaseOne['createdId'])
 
@@ -394,6 +451,12 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   if (!phaseTwo['skillPage']) {
     return { ok: false, detail: `a página de habilidades não abriu: ${JSON.stringify(phaseTwo)}` }
   }
+  if (!phaseTwo['itemPage']) {
+    return { ok: false, detail: `a página de itens não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
+  if (!phaseTwo['dropPage']) {
+    return { ok: false, detail: `a página de drops não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
   if (!phaseTwo['removed']) {
     return {
       ok: false,
@@ -405,7 +468,7 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
     ok: true,
     detail:
       `interface renderizada (${phaseOne['chars']} caracteres), projeto criado em ` +
-      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas, efeitos, habilidades e Godot ` +
+      `${phaseOne['created']}, backup registrado, arquivos, personagens, animações, mapas, armas, efeitos, habilidades, itens, drops e Godot ` +
       `respondendo, banco em ${phaseOne['dbPath']}`
   }
 }

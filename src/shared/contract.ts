@@ -16,6 +16,8 @@ import type {
 } from './weapons'
 import type { EffectAsset, EffectPreview, EffectSpec } from './effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from './skills'
+import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from './items'
+import type { DropTableAsset, DropTableSpec, DropTableStats } from './drops'
 
 /**
  * Contrato compartilhado entre o processo principal (Node) e a interface (React).
@@ -305,6 +307,19 @@ export interface StudioApi {
     list(projectId: string): Promise<SkillAsset[]>
     remove(assetId: string): Promise<void>
   }
+  items: {
+    preview(spec: ItemSpec): Promise<ItemPreview>
+    interpret(description: string): Promise<ItemSuggestion>
+    save(projectId: string, spec: ItemSpec): Promise<ItemAsset>
+    list(projectId: string): Promise<ItemAsset[]>
+    remove(assetId: string): Promise<void>
+  }
+  drops: {
+    stats(spec: DropTableSpec): Promise<DropTableStats>
+    save(projectId: string, spec: DropTableSpec): Promise<DropTableAsset>
+    list(projectId: string): Promise<DropTableAsset[]>
+    remove(assetId: string): Promise<void>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -383,5 +398,14 @@ export const IPC = {
   skillsSave: 'studio:skills:save',
   skillsList: 'studio:skills:list',
   skillsRemove: 'studio:skills:remove',
+  itemsPreview: 'studio:items:preview',
+  itemsInterpret: 'studio:items:interpret',
+  itemsSave: 'studio:items:save',
+  itemsList: 'studio:items:list',
+  itemsRemove: 'studio:items:remove',
+  dropsStats: 'studio:drops:stats',
+  dropsSave: 'studio:drops:save',
+  dropsList: 'studio:drops:list',
+  dropsRemove: 'studio:drops:remove',
   eventProgress: 'studio:event:progress'
 } as const

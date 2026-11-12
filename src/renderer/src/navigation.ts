@@ -193,8 +193,9 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Itens e Equipamentos',
     stage: 8,
     icon: Package,
+    available: true,
     summary:
-      'Criar coletes, capacetes, mochilas, seringas, kits médicos, chaves e itens especiais com ícones e atributos.',
+      'Crie coletes, capacetes, mochilas, seringas, kits médicos, chaves e itens especiais com ícone em pixel art, raridade, atributos e ficha JSON exportada para a Godot.',
     planned: [
       'Ícones e sprites gerados',
       'Nome, descrição, raridade, valor e propriedades',
@@ -207,8 +208,9 @@ export const MODULES: ModuleDefinition[] = [
     title: 'Drops e Economia',
     stage: 8,
     icon: Dices,
+    available: true,
     summary:
-      'Configurar tabelas de recompensas, caixas e eventos com validação real de probabilidades.',
+      'Monte tabelas de recompensa com chances exclusivas validadas em 100% ou independentes, calculadora de chances e script GDScript gerado.',
     planned: [
       'Tabelas de drops por monstro, caixa e missão',
       'Probabilidades exclusivas validadas em 100%',

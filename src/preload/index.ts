@@ -17,6 +17,8 @@ import type {
 } from '@shared/weapons'
 import type { EffectAsset, EffectPreview, EffectSpec } from '@shared/effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from '@shared/skills'
+import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from '@shared/items'
+import type { DropTableAsset, DropTableSpec, DropTableStats } from '@shared/drops'
 import {
   IPC,
   type ActivityEntry,
@@ -158,6 +160,22 @@ const api: StudioApi = {
       invoke<SkillAsset>(IPC.skillsSave, projectId, spec),
     list: (projectId: string) => invoke<SkillAsset[]>(IPC.skillsList, projectId),
     remove: (assetId: string) => invoke<void>(IPC.skillsRemove, assetId)
+  },
+  items: {
+    preview: (spec: ItemSpec) => invoke<ItemPreview>(IPC.itemsPreview, spec),
+    interpret: (description: string) =>
+      invoke<ItemSuggestion>(IPC.itemsInterpret, description),
+    save: (projectId: string, spec: ItemSpec) =>
+      invoke<ItemAsset>(IPC.itemsSave, projectId, spec),
+    list: (projectId: string) => invoke<ItemAsset[]>(IPC.itemsList, projectId),
+    remove: (assetId: string) => invoke<void>(IPC.itemsRemove, assetId)
+  },
+  drops: {
+    stats: (spec: DropTableSpec) => invoke<DropTableStats>(IPC.dropsStats, spec),
+    save: (projectId: string, spec: DropTableSpec) =>
+      invoke<DropTableAsset>(IPC.dropsSave, projectId, spec),
+    list: (projectId: string) => invoke<DropTableAsset[]>(IPC.dropsList, projectId),
+    remove: (assetId: string) => invoke<void>(IPC.dropsRemove, assetId)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),

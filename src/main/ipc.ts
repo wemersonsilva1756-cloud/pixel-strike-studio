@@ -6,6 +6,8 @@ import type { MapConfig, MapDraft } from '@shared/maps'
 import type { WeaponSpec } from '@shared/weapons'
 import type { EffectSpec } from '@shared/effects'
 import type { SkillSpec } from '@shared/skills'
+import type { ItemSpec } from '@shared/items'
+import type { DropTableSpec } from '@shared/drops'
 import {
   applyGodotExport,
   backupProject,
@@ -15,7 +17,14 @@ import {
   listSkills,
   listWeapons,
   previewEffect,
+  previewItem,
   previewSkill,
+  interpretItemDescription,
+  dropTableSummaryStats,
+  removeDropTable,
+  removeItem,
+  saveDropTable,
+  saveItem,
   previewWeapon,
   removeEffect,
   removeSkill,
@@ -25,6 +34,8 @@ import {
   removeWeapon,
   saveWeapon,
   listAnimations,
+  listDropTables,
+  listItems,
   listMaps,
   loadMap,
   previewAnimation,
@@ -537,6 +548,49 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
 
   handle<null>(IPC.skillsRemove, async (assetId) => {
     await removeSkill(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  // --------------------------------------------------------- itens e drops
+  handle(IPC.itemsPreview, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados do item inválidos.')
+    return previewItem(spec as ItemSpec)
+  })
+
+  handle(IPC.itemsInterpret, async (description) =>
+    interpretItemDescription(typeof description === 'string' ? description : '')
+  )
+
+  handle(IPC.itemsSave, async (projectId, spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados do item inválidos.')
+    return saveItem(requireString(projectId, 'projectId'), spec as ItemSpec)
+  })
+
+  handle(IPC.itemsList, async (projectId) =>
+    listItems(requireString(projectId, 'projectId'))
+  )
+
+  handle<null>(IPC.itemsRemove, async (assetId) => {
+    await removeItem(requireString(assetId, 'assetId'))
+    return null
+  })
+
+  handle(IPC.dropsStats, async (spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da tabela inválidos.')
+    return dropTableSummaryStats(spec as DropTableSpec)
+  })
+
+  handle(IPC.dropsSave, async (projectId, spec) => {
+    if (!spec || typeof spec !== 'object') throw new Error('Dados da tabela inválidos.')
+    return saveDropTable(requireString(projectId, 'projectId'), spec as DropTableSpec)
+  })
+
+  handle(IPC.dropsList, async (projectId) =>
+    listDropTables(requireString(projectId, 'projectId'))
+  )
+
+  handle<null>(IPC.dropsRemove, async (assetId) => {
+    await removeDropTable(requireString(assetId, 'assetId'))
     return null
   })
 }

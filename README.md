@@ -4,16 +4,16 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1 a 7 de 10 concluídas e testadas.**
+> **Estado atual: Etapas 1 a 8 de 10 concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
 > transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
 > spritesheet**, desenha **mapas com tiles, colisão, áreas e spawns** e cria
 > **skins de armas** em pixel art com raridade separada da condição de desgaste,
 > gera **efeitos visuais animados** e **habilidades** com parâmetros e script para
-> a Godot 4. Os editores de itens/drops e o assistente de IA **ainda não existem** —
-> cada item tem sua etapa e a interface diz isso claramente, sem botões que não
-> funcionam.
+> a Godot 4, cria **itens e equipamentos** com atributos e monta **tabelas de drops**
+> com validação real de 100%. O assistente de IA **ainda não existe** — ele tem sua
+> etapa e a interface diz isso claramente, sem botões que não funcionam.
 >
 > O gerador da etapa 3 é **procedural e determinístico**, não é IA: a descrição é
 > interpretada por palavras-chave. Os provedores de IA chegam na etapa 9.
@@ -51,6 +51,10 @@ para quem está começando.
 | Efeitos com quadros, FPS, cores e spritesheet | Funcionando |
 | Habilidades com dano, alcance, raio, duração, recarga e custo | Funcionando |
 | Script GDScript de habilidade gerado automaticamente | Funcionando |
+| Itens e equipamentos em 7 categorias com ícone e atributos | Funcionando |
+| Tabelas de drops exclusivas validadas em 100% ou independentes | Funcionando |
+| Calculadora de chances e quantidade esperada de itens | Funcionando |
+| Script GDScript de sorteio e planilha CSV de cada tabela | Funcionando |
 | Exportar para a Godot com prévia e backup dos substituídos | Funcionando |
 | Banco de dados local SQLite | Funcionando |
 | Backups completos com restauração | Funcionando |
@@ -58,8 +62,7 @@ para quem está começando.
 | Histórico de ações | Funcionando |
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
-| Geradores de itens e drops | Etapa 8 |
-| Exportar cenas geradas pelos módulos restantes | Junto com as etapas 6 a 8 |
+| Exportar cenas geradas pelos módulos restantes | Junto com as etapas 9 e 10 |
 | Geração com inteligência artificial de verdade | Etapa 9 |
 | Provedores de IA e assistente central | Etapa 9 |
 | Instalador para Windows e sistema de atualização | Etapa 10 |
@@ -288,6 +291,52 @@ O script gerado (`usar(origem, alvo)`) cria a `Area2D` com o raio configurado, a
 spritesheet do efeito e respeita a recarga. Não há som nesta etapa: a integração
 com áudio fica para o polimento da etapa 10.
 
+### Itens e equipamentos
+
+Menu **Itens e Equipamentos**. Passo a passo:
+
+1. Escolha a **categoria**: colete, capacete, mochila, seringa, kit médico, chave ou
+   item especial.
+2. Escreva o **nome** e a **descrição**. **Aplicar descrição** lê palavras como
+   “colete de 80 de armadura” ou “seringa que cura 40” e preenche os campos (não é
+   IA nesta etapa).
+3. Escolha a **raridade**: comum, incomum, raro, épico ou lendário. A raridade só
+   muda a faixa colorida do ícone — nunca os atributos.
+4. Ajuste os **atributos da categoria** (armadura, capacidade, cura, durabilidade e
+   valor), as cores, o tamanho e a semente.
+5. Clique em **Salvar no projeto**.
+
+Cada item grava em `itens/<nome>/`:
+
+```
+colete-de-teste/
+  colete-de-teste_icone.png
+  colete-de-teste.json
+```
+
+### Drops e economia
+
+Menu **Drops e Economia**. Passo a passo:
+
+1. Dê um nome à tabela e escolha a **fonte**: monstro, caixa, missão ou evento.
+2. Escolha o **modo**: **exclusiva** (uma recompensa por abertura, as chances têm de
+   somar exatamente 100%) ou **independente** (cada item rola sozinho).
+3. Adicione os itens com nome, raridade, chance em % e quantidade mínima/máxima.
+4. Se a soma não estiver em 100%, o botão **Distribuir 100%** reajusta tudo
+   proporcionalmente.
+5. Confira a **calculadora**: chance de cada item sair ao menos uma vez e quantidade
+   esperada para o número de aberturas escolhido.
+6. Clique em **Salvar no projeto**.
+
+Cada tabela grava em `drops/<nome>/`:
+
+```
+loot-de-inimigo-comum/
+  loot-de-inimigo-comum.json
+  loot-de-inimigo-comum.gd    ← sortear() pronto para a Godot 4
+  loot-de-inimigo-comum.csv   ← planilha para conferir a economia
+```
+
 ### Gerenciador de arquivos
 
 Menu **Arquivos do projeto**. Você navega pelas pastas, vê imagens como sprites (com
@@ -326,6 +375,8 @@ O que a exportação grava hoje:
 | `pixel_strike/recursos/armas/...` | Ícone, comparativo de raridades e ficha JSON de cada skin |
 | `pixel_strike/recursos/efeitos/...` | Quadros, spritesheet e ficha de cada efeito |
 | `pixel_strike/recursos/habilidades/...` | Ícone, quadros do efeito, ficha e script GDScript |
+| `pixel_strike/recursos/itens/...` | Ícone e ficha JSON de cada item |
+| `pixel_strike/recursos/drops/...` | Ficha JSON, script GDScript de sorteio e planilha CSV |
 
 Tudo o que os geradores criam entra na exportação automaticamente — não é preciso
 copiar arquivo por arquivo. O Studio não altera cenas, scripts ou
@@ -350,7 +401,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 228 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos e habilidades
+npm run test:core   # 262 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens e drops
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -361,7 +412,7 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 228/228 verificações do
+Resultado da última execução desta versão: **typecheck OK, 262/262 verificações do
 núcleo, build OK, smoke OK**.
 
 ---
@@ -383,6 +434,8 @@ src/
       weapons.ts        skins: desenho, raridade, condição, comparação e ficha
       effects.ts        efeitos: partículas por quadro, spritesheet e ficha
       skills.ts         habilidades: parâmetros, ícone, efeito e script GDScript
+      items.ts          itens: ícone por categoria, atributos, raridade e ficha
+      drops.ts          tabelas de drops: validação de 100%, script e planilha
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -433,9 +486,9 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ## Próxima etapa
 
-**Etapa 8 — Itens, drops e economia:** coletes, capacetes, mochilas, seringas, kits
-médicos e itens especiais com ícones e atributos, tabelas de recompensas, caixas,
-calculadora de probabilidades e validação real dos 100%.
+**Etapa 9 — Assistente de IA e provedores:** central de provedores com chaves em
+armazenamento seguro, adaptadores independentes para imagem, texto, código e áudio, e
+assistente que interpreta pedidos e prepara arquivos sempre com prévia e autorização.
 
-Nada da Etapa 8 começa antes de as etapas 1 a 7 estarem estáveis — e elas estão
+Nada da Etapa 9 começa antes de as etapas 1 a 8 estarem estáveis — e elas estão
 testadas nesta versão.

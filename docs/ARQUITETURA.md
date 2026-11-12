@@ -54,6 +54,10 @@ Regras que sustentam essa divisão:
 | `src/shared/effects.ts` | Tipos de efeito, presets de quadros/FPS/cores e limites |
 | `src/main/core/skills.ts` | Habilidades: validação, ícone, efeito, script GDScript e gravação |
 | `src/shared/skills.ts` | Tipos de habilidade, parâmetros, faixas e interpretação de descrição |
+| `src/main/core/items.ts` | Itens: ícone por categoria, desgaste, gravação e remoção |
+| `src/shared/items.ts` | Categorias, raridades, atributos, faixas e interpretação de descrição |
+| `src/main/core/drops.ts` | Tabelas de drops: validação de 100%, script GDScript e CSV |
+| `src/shared/drops.ts` | Modelos de drop, calculadora de chances e normalização |
 | `src/main/core/png.ts` | Codificador PNG RGBA com `zlib` (sem dependências externas) |
 | `src/main/smoke.ts` | Teste automático em duas fases (com recarga da janela) |
 | `src/main/core/settings-store.ts` | Preferências em tabela chave/valor |
@@ -119,6 +123,10 @@ arbitrário da interface: o núcleo sempre resolve os caminhos a partir do banco
 | `studio:skills:preview` | ícone + animação do efeito da habilidade |
 | `studio:skills:interpret` | sugere tipo, efeito e parâmetros por palavras-chave |
 | `studio:skills:save` / `list` / `remove` | grava ícone, quadros, `.gd` e ficha em `habilidades/` |
+| `studio:items:preview` / `interpret` | ícone do item em memória e leitura da descrição |
+| `studio:items:save` / `list` / `remove` | grava em `itens/`, lista e move para a lixeira |
+| `studio:drops:stats` | calculadora de chances e quantidade esperada |
+| `studio:drops:save` / `list` / `remove` | grava JSON, `.gd` e CSV em `drops/` |
 | `studio:event:progress` | evento (main → renderer) de operações longas |
 
 `studio:app:smoke-ready` é o único canal `send` (sem resposta), usado pelo teste
@@ -351,6 +359,31 @@ O mapa é uma grade de tiles com dados que a Godot entende de verdade.
 - A exportação para a Godot copia `efeitos/` e `habilidades/` junto dos demais
   recursos.
 
+## Itens e drops (etapa 8)
+
+- `src/shared/items.ts` define 7 categorias (colete, capacete, mochila, seringa, kit,
+  chave, especial), 5 raridades próprias e os atributos armadura, capacidade, cura,
+  durabilidade e valor, com faixas válidas por campo. `ITEM_CATEGORY_ATTRIBUTES` diz
+  quais atributos importam em cada categoria.
+- `interpretItem` lê a descrição por palavras-chave e por número: aceita “80 de
+  armadura” e “cura 40”. Não é IA nesta etapa.
+- `items.ts` desenha a silhueta de cada categoria em grade 32 (colete com placas,
+  capacete com viseira, mochila com alças, seringa com agulha, kit com cruz, chave com
+  anel e item especial em forma de gema), aplica marcas de desgaste proporcionais à
+  durabilidade perdida e a faixa de raridade na base. Grava `itens/<slug>/` com o
+  ícone PNG e a ficha JSON.
+- `src/shared/drops.ts` define fonte (monstro, caixa, missão, evento), modo
+  (`exclusiva` ou `independente`), as entradas e `dropTableStats`, que calcula a
+  quantidade esperada e a chance de sair ao menos uma vez em N aberturas com a mesma
+  matemática do jogo.
+- `normalizeEntries` reajusta as chances para exatamente 100% (usado pelo botão
+  “Distribuir 100%”).
+- `drops.ts` valida a tabela de verdade: no modo exclusivo a soma precisa ficar em
+  100% com tolerância de 0,01; no independente cada item é validado sozinho. Grava
+  `drops/<slug>/` com ficha JSON, planilha CSV e um GDScript com `sortear()` — por
+  faixa acumulada no modo exclusivo, rolagem individual no independente.
+- A exportação copia `itens/` e `drops/` para `pixel_strike/recursos/`.
+
 ## Teste automático do Electron (`npm run smoke`)
 
 Executa o app compilado com `--smoke-test`:
@@ -363,12 +396,12 @@ Executa o app compilado com `--smoke-test`:
   `projeto.json`, consulta o estado inicial da Godot, gera um sprite (prévia + save),
   monta uma animação de 6 quadros com spritesheet (prévia + save), propõe, renderiza
   e salva um mapa de 24×16 tiles, gera uma skin com ícone/comparação/save, um efeito
-  de 4 quadros e uma habilidade com script;
+  de 4 quadros, uma habilidade com script, um item e uma tabela de drops;
 - recarrega a janela, como um reinício, e **fase 2**: confirma que o app abriu no
   painel, abre as páginas de arquivos, Godot, personagens, animações e mapas pelo
   menu, verifica que as pastas, os sprites, a linha do tempo, a grade do mapa, o ícone
-  da skin, a prévia do efeito e os parâmetros da habilidade aparecem e remove o
-  projeto pela lixeira;
+  da skin, a prévia do efeito, os parâmetros da habilidade, o ícone do item e a
+  calculadora de drops aparecem e remove o projeto pela lixeira;
 - encerra com código 0 apenas se tudo responder como esperado, e imprime um resumo.
 
 Isso cobre de uma vez: preload, IPC, validações, SQLite, sistema de arquivos, React e
