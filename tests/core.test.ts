@@ -1645,6 +1645,10 @@ async function main(): Promise<void> {
       updateSem.status === 'sem-publicacao' && updateSem.latest === null,
       'repositório sem release é reportado com clareza'
     )
+    ok(
+      updateSem.releasesPageUrl.endsWith('/releases'),
+      'resultado sempre traz a página de Releases para abrir manualmente'
+    )
 
     updateModo = 'erro'
     const updateErro = await checkForUpdates()

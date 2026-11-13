@@ -48,7 +48,7 @@ Requisitos: Windows 10 ou 11, 64 bits.
 ## Verificação desta versão
 
 - `npm run typecheck` — OK
-- `npm run test:core` — 297 verificações aprovadas
+- `npm run test:core` — 298 verificações aprovadas
 - `npm run build` — OK
 - Smoke test no Electron e também no aplicativo empacotado
   (`dist/win-unpacked/Pixel Strike Studio.exe --smoke-test`) — OK
@@ -58,7 +58,9 @@ Requisitos: Windows 10 ou 11, 64 bits.
 
 - O instalador **não é assinado**; o Windows mostrará o aviso do SmartScreen no primeiro
   uso ("Mais informações" → "Executar assim mesmo").
-- A atualização é verificada e baixada manualmente; não há atualização silenciosa.
+- A atualização é verificada e baixada manualmente; não há atualização silenciosa. Como
+  este repositório é **privado**, a verificação pública retorna 404 — o Studio avisa e
+  mostra o botão “Abrir página de Releases”. Baixe o instalador por esta página.
 - As chamadas de IA foram testadas contra um servidor local que simula a API. Nenhum
   provedor real foi chamado durante os testes automatizados — o primeiro uso real é com a
   sua chave.

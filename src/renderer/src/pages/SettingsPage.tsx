@@ -235,6 +235,16 @@ export function SettingsPage(): React.JSX.Element {
                     Abrir página de download
                   </Button>
                 ) : null}
+                {update.status === 'sem-publicacao' ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={RefreshCw}
+                    onClick={() => void openRelease(update.releasesPageUrl)}
+                  >
+                    Abrir página de Releases
+                  </Button>
+                ) : null}
               </div>
             ) : (
               <p className="text-[11px] text-ink-500">

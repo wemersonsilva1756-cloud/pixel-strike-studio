@@ -61,6 +61,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
   const endpoint =
     options.endpoint ?? `https://api.github.com/repos/${UPDATE_REPOSITORY}/releases/latest`
   const checkedAt = new Date().toISOString()
+  const releasesPageUrl = `${updatesRepositoryUrl()}/releases`
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 20_000)
@@ -78,9 +79,10 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return {
         status: 'sem-publicacao',
         currentVersion,
+        releasesPageUrl,
         latest: null,
         message:
-          'Ainda não existe versão publicada no repositório. O instalador gerado localmente é a versão atual.',
+          'Nenhuma versão publicada foi encontrada sem login. Se o repositório for privado, a consulta pública não enxerga as Releases — abra a página de Releases para baixar o instalador.',
         checkedAt
       }
     }
@@ -89,6 +91,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return {
         status: 'erro',
         currentVersion,
+        releasesPageUrl,
         latest: null,
         message:
           response.status === 403
@@ -103,6 +106,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return {
         status: 'erro',
         currentVersion,
+        releasesPageUrl,
         latest: null,
         message: 'O GitHub devolveu uma resposta inesperada para a versão publicada.',
         checkedAt
@@ -114,6 +118,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return {
         status: 'disponivel',
         currentVersion,
+        releasesPageUrl,
         latest: release,
         message: `A versão ${release.version} está disponível (você está na ${currentVersion}).`,
         checkedAt
@@ -121,8 +126,9 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
     }
 
     return {
-      status: 'atualizado',
-      currentVersion,
+              status: 'atualizado',
+        currentVersion,
+        releasesPageUrl,
       latest: release,
       message: `Você está na versão mais recente (${currentVersion}).`,
       checkedAt
@@ -131,6 +137,7 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
     return {
       status: 'erro',
       currentVersion,
+      releasesPageUrl,
       latest: null,
       message:
         error instanceof Error && error.name === 'AbortError'

@@ -24,6 +24,8 @@ export interface UpdateCheckResult {
   latest: UpdateRelease | null
   message: string
   checkedAt: string
+  /** Página de Releases, sempre disponível para abrir manualmente. */
+  releasesPageUrl: string
 }
 
 export const UPDATE_REPOSITORY = 'wemersonsilva1756-cloud/pixel-strike-studio'

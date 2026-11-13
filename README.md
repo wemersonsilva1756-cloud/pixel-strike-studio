@@ -430,7 +430,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 297 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens, drops, IA, atualizações e logs
+npm run test:core   # 298 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens, drops, IA, atualizações e logs
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -441,7 +441,7 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 297/297 verificações do
+Resultado da última execução desta versão: **typecheck OK, 298/298 verificações do
 núcleo, build OK, smoke OK** — inclusive rodando o smoke dentro do aplicativo já
 empacotado (`dist/win-unpacked/Pixel Strike Studio.exe`).
 
@@ -540,7 +540,12 @@ O aplicativo empacotado foi verificado: `dist/win-unpacked/Pixel Strike Studio.e
 
 Em **Configurações → Atualizações**, o Studio consulta a última versão publicada no
 GitHub e compara com a instalada. Ele mostra a versão, as notas e o link do instalador;
-**não baixa nem instala sozinho**. Sem release publicada, a mensagem diz exatamente isso.
+**não baixa nem instala sozinho**.
+
+A verificação usa a API **pública** do GitHub. Enquanto o repositório for **privado**, ela
+responde 404 e o Studio informa que nenhuma versão foi encontrada sem login, com um botão
+que abre a página de Releases para baixar o instalador manualmente. Para a verificação
+automática funcionar, o repositório precisa ser público.
 
 ## Logs e diagnóstico
 
@@ -553,8 +558,9 @@ conteúdo de arquivo é registrado.
 
 - O instalador **não é assinado** (sem certificado de código), então o Windows mostrará
 o aviso do SmartScreen no primeiro uso.
-- A atualização é **verificada e baixada manualmente**: não há atualização silenciosa
-nem feed publicado até o momento.
+- A atualização é **verificada e baixada manualmente**: não há atualização silenciosa.
+- Como o repositório é **privado**, a verificação pública de versões retorna 404; a tela
+  mostra o aviso e o atalho para a página de Releases.
 - As chamadas de IA foram testadas contra um servidor local que simula a API; **nenhum
 provedor real foi chamado** nesta máquina por falta de chave.
 - Os scripts `.gd` gerados são validados por texto e estrutura, **não compilados** na

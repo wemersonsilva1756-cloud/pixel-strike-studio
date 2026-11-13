@@ -83,6 +83,11 @@ certificado no repositório.
 A verificação usa a API pública de releases do GitHub. Nenhum dado do projeto é
 enviado.
 
+> **Repositório privado:** a API pública responde 404 para repositórios privados, então a
+> verificação automática não encontra a Release. O Studio mostra o aviso e o botão
+> “Abrir página de Releases”. Para a verificação funcionar, o repositório precisa ser
+> público — ou o download é feito manualmente pela página de Releases.
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | Solução |
