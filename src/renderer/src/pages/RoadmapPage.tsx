@@ -96,7 +96,9 @@ const STAGES: Stage[] = [
     title: 'Testes, estabilidade e empacotamento para Windows',
     description:
       'Validações reais, testes de recursos, correções finais, instalador para Windows, sistema de atualização e documentação completa.',
-    deliverable: 'Instalador Windows, documentação e sistema de atualização.'
+    deliverable:
+      'Entregue nesta versão: 297 verificações, smoke rodando também no aplicativo empacotado, log local de falhas, proteção contra tela quebrada, verificação de atualizações pelo GitHub e instalador NSIS gerado com electron-builder.',
+    done: true
   }
 ]
 

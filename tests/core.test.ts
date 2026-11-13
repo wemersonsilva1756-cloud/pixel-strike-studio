@@ -32,8 +32,13 @@ import {
   generateAudio,
   generateCode,
   generateImage,
+  checkForUpdates,
+  configureUpdates,
   generateText,
   listAiFiles,
+  logError,
+  logEvent,
+  readLogTail,
   listAiProviders,
   planCreations,
   queryOne,
@@ -115,6 +120,7 @@ import { proposeMap } from '../src/shared/maps'
 import { defaultColors, interpretWeapon, wearForFloat } from '../src/shared/weapons'
 import { interpretSkill } from '../src/shared/skills'
 import { defaultDropTable, dropTableStats, normalizeEntries } from '../src/shared/drops'
+import { compareVersions } from '../src/shared/updates'
 import { interpretItem } from '../src/shared/items'
 
 const root = mkdtempSync(join(tmpdir(), 'pixel-strike-test-'))
@@ -1569,6 +1575,95 @@ async function main(): Promise<void> {
   } finally {
     await new Promise<void>((resolve) => fakeProvider.close(() => resolve()))
   }
+
+  // --- Atualizações e diagnóstico (etapa 10) ----------------------------
+  ok(compareVersions('1.0.0', '0.9.0') > 0, 'comparação de versões reconhece versão mais nova')
+  ok(compareVersions('v1.0.0', '1.0.0') === 0, 'prefixo v é ignorado na comparação')
+  ok(compareVersions('1.0.10', '1.0.9') > 0, 'comparação de versões trata números com dois dígitos')
+  ok(compareVersions('0.9.0', '1.0.0') < 0, 'versão mais antiga fica abaixo na comparação')
+
+  let updateModo: 'nova' | 'antiga' | 'vazio' | 'erro' = 'nova'
+  const updateServer = createServer((_request, response) => {
+    if (updateModo === 'erro') {
+      response.writeHead(500, { 'content-type': 'application/json' })
+      response.end('{}')
+      return
+    }
+    if (updateModo === 'vazio') {
+      response.writeHead(404, { 'content-type': 'application/json' })
+      response.end(JSON.stringify({ message: 'Not Found' }))
+      return
+    }
+    response.writeHead(200, { 'content-type': 'application/json' })
+    response.end(
+      JSON.stringify({
+        tag_name: updateModo === 'nova' ? 'v1.1.0' : 'v1.0.0',
+        name: 'Pixel Strike Studio 1.1.0',
+        body: 'Correções e melhorias.',
+        html_url: 'https://github.com/wemersonsilva1756-cloud/pixel-strike-studio/releases/tag/v1.1.0',
+        published_at: '2026-11-01T12:00:00Z',
+        assets: [
+          {
+            name: 'PixelStrikeStudio-Setup-1.1.0.exe',
+            browser_download_url:
+              'https://github.com/wemersonsilva1756-cloud/pixel-strike-studio/releases/download/v1.1.0/PixelStrikeStudio-Setup-1.1.0.exe'
+          }
+        ]
+      })
+    )
+  })
+
+  await new Promise<void>((resolve) => updateServer.listen(0, '127.0.0.1', () => resolve()))
+  const updatePort = (updateServer.address() as AddressInfo).port
+  configureUpdates({
+    currentVersion: '1.0.0',
+    endpoint: `http://127.0.0.1:${updatePort}/latest`
+  })
+
+  try {
+    const updateNova = await checkForUpdates()
+    ok(
+      updateNova.status === 'disponivel' && updateNova.latest?.version === '1.1.0',
+      'verificação de atualização encontra versão mais nova'
+    )
+    ok(
+      updateNova.latest?.assetName === 'PixelStrikeStudio-Setup-1.1.0.exe' &&
+        updateNova.latest?.notes.includes('Correções'),
+      'atualização traz o instalador e as notas da versão'
+    )
+
+    updateModo = 'antiga'
+    const updateIgual = await checkForUpdates()
+    ok(
+      updateIgual.status === 'atualizado',
+      'versão igual à instalada é reportada como atualizada'
+    )
+
+    updateModo = 'vazio'
+    const updateSem = await checkForUpdates()
+    ok(
+      updateSem.status === 'sem-publicacao' && updateSem.latest === null,
+      'repositório sem release é reportado com clareza'
+    )
+
+    updateModo = 'erro'
+    const updateErro = await checkForUpdates()
+    ok(updateErro.status === 'erro', 'falha do GitHub vira mensagem de erro, não exceção')
+  } finally {
+    await new Promise<void>((resolve) => updateServer.close(() => resolve()))
+  }
+
+  logEvent('info', 'teste', 'linha de teste do diagnóstico')
+  logError('teste-erro', new Error('falha simulada de diagnóstico'))
+  const log = readLogTail()
+  ok(
+    log.text.includes('teste') && log.text.includes('falha simulada'),
+    'log local registra evento e erro com contexto'
+  )
+  ok(
+    log.path.endsWith('app.log') && existsSync(log.path) && log.bytes > 0,
+    'arquivo de log é criado dentro da pasta de dados'
+  )
 
   // --- Remoção segura -----------------------------------------------------
   await removeProject(project.id, true)

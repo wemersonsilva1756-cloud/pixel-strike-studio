@@ -1,0 +1,42 @@
+appId: com.pixelstrike.studio
+productName: Pixel Strike Studio
+copyright: Pixel Strike Studio
+
+directories:
+  output: dist
+  buildResources: build
+
+# O aplicativo é empacotado já compilado por `electron-vite build`.
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+
+asar: true
+# O driver SQLite do libsql é binário e precisa ficar fora do asar para carregar.
+asarUnpack:
+  - node_modules/@libsql/**/*
+  - node_modules/libsql/**/*
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: PixelStrikeStudio-Setup-${version}.${ext}
+  executableName: Pixel Strike Studio
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Pixel Strike Studio
+  uninstallDisplayName: Pixel Strike Studio ${version}
+  deleteAppDataOnUninstall: false
+
+# Nada é publicado automaticamente: o instalador fica em dist/ para você enviar
+# manualmente a uma Release do GitHub.
+publish: null

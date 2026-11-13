@@ -246,6 +246,7 @@ function phaseTwoScript(projectId: string): string {
       itemPage: false,
       dropPage: false,
       aiPage: false,
+      settingsPage: false,
       removed: false
     }
 
@@ -356,6 +357,15 @@ function phaseTwoScript(projectId: string): string {
     const aiText = document.body.innerText
     info.aiPage =
       aiText.includes('Provedores') && aiText.includes('Assistente de criações')
+
+    const settingsNav = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent.trim() === 'Configurações'
+    )
+    settingsNav?.click()
+    await esperar(1500)
+    const settingsText = document.body.innerText
+    info.settingsPage =
+      settingsText.includes('Atualizações') && settingsText.includes('Logs e diagnóstico')
 
     await window.studio.projects.remove(${JSON.stringify(projectId)}, true)
     info.removed = (await window.studio.projects.list()).length === 0
@@ -485,6 +495,9 @@ export async function runSmokeTest(window: BrowserWindow): Promise<SmokeOutcome>
   }
   if (!phaseTwo['aiPage']) {
     return { ok: false, detail: `a página de IA não abriu: ${JSON.stringify(phaseTwo)}` }
+  }
+  if (!phaseTwo['settingsPage']) {
+    return { ok: false, detail: `as configurações não abriram: ${JSON.stringify(phaseTwo)}` }
   }
   if (!phaseTwo['removed']) {
     return {

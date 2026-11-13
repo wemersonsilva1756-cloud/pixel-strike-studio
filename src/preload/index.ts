@@ -19,6 +19,7 @@ import type { EffectAsset, EffectPreview, EffectSpec } from '@shared/effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from '@shared/skills'
 import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from '@shared/items'
 import type { DropTableAsset, DropTableSpec, DropTableStats } from '@shared/drops'
+import type { UpdateCheckResult } from '@shared/updates'
 import type {
   AiAudioResult,
   AiCodeResult,
@@ -213,6 +214,15 @@ const api: StudioApi = {
       invoke<AssistantPlan>(IPC.assistantPlan, projectId, request),
     apply: (projectId: string, plan: AssistantPlan) =>
       invoke<AssistantApplyResult>(IPC.assistantApply, projectId, plan)
+  },
+  diagnostics: {
+    logs: () => invoke<{ path: string; text: string; bytes: number }>(IPC.diagnosticsLogs),
+    openLogsFolder: () => invoke<void>(IPC.diagnosticsOpenLogs),
+    report: (message: string) => invoke<void>(IPC.diagnosticsReport, message)
+  },
+  updates: {
+    check: () => invoke<UpdateCheckResult>(IPC.updatesCheck),
+    openPage: (url: string) => invoke<void>(IPC.updatesOpen, url)
   },
   godot: {
     state: (projectId: string) => invoke<ProjectGodotState>(IPC.godotState, projectId),

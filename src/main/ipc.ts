@@ -9,6 +9,7 @@ import type { SkillSpec } from '@shared/skills'
 import type { ItemSpec } from '@shared/items'
 import type { DropTableSpec } from '@shared/drops'
 import { isAiProviderId, type AssistantPlan } from '@shared/ai'
+import { UPDATE_REPOSITORY } from '@shared/updates'
 import {
   applyGodotExport,
   backupProject,
@@ -18,6 +19,10 @@ import {
   listSkills,
   listWeapons,
   applyPlan,
+  checkForUpdates,
+  logEvent,
+  logError,
+  readLogTail,
   generateAudio,
   generateCode,
   generateImage,
@@ -670,6 +675,37 @@ export function registerIpcHandlers(ipcContext: IpcContext): void {
       throw new Error('Plano inválido.')
     }
     return applyPlan(requireString(projectId, 'projectId'), plan as AssistantPlan)
+  })
+
+  // ------------------------------------------------ diagnóstico e atualizações
+  handle(IPC.diagnosticsLogs, async () => readLogTail())
+
+  handle<null>(IPC.diagnosticsOpenLogs, async () => {
+    const error = await shell.openPath(join(ctx().dataDir, 'logs'))
+    if (error) throw new Error(`Não foi possível abrir a pasta de logs: ${error}`)
+    return null
+  })
+
+  handle<null>(IPC.diagnosticsReport, async (message) => {
+    logEvent('erro', 'interface', requireString(message, 'mensagem'))
+    return null
+  })
+
+  handle(IPC.updatesCheck, async () => {
+    try {
+      return await checkForUpdates()
+    } catch (error) {
+      logError('atualizacoes', error)
+      throw error
+    }
+  })
+
+  handle<null>(IPC.updatesOpen, async (url) => {
+    const link = requireString(url, 'endereço')
+    const allowed = link.startsWith(`https://github.com/${UPDATE_REPOSITORY}`)
+    if (!allowed) throw new Error('Este endereço não é do repositório do Studio.')
+    await shell.openExternal(link)
+    return null
   })
 }
 

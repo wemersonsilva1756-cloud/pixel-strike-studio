@@ -18,6 +18,7 @@ import type { EffectAsset, EffectPreview, EffectSpec } from './effects'
 import type { SkillAsset, SkillSpec, SkillSuggestion } from './skills'
 import type { ItemAsset, ItemPreview, ItemSpec, ItemSuggestion } from './items'
 import type { DropTableAsset, DropTableSpec, DropTableStats } from './drops'
+import type { UpdateCheckResult } from './updates'
 import type {
   AiAudioResult,
   AiCodeResult,
@@ -349,6 +350,15 @@ export interface StudioApi {
     plan(projectId: string, request: string): Promise<AssistantPlan>
     apply(projectId: string, plan: AssistantPlan): Promise<AssistantApplyResult>
   }
+  diagnostics: {
+    logs(): Promise<{ path: string; text: string; bytes: number }>
+    openLogsFolder(): Promise<void>
+    report(message: string): Promise<void>
+  }
+  updates: {
+    check(): Promise<UpdateCheckResult>
+    openPage(url: string): Promise<void>
+  }
   godot: {
     state(projectId: string): Promise<ProjectGodotState>
     link(projectId: string): Promise<ProjectGodotState | null>
@@ -447,5 +457,10 @@ export const IPC = {
   aiFiles: 'studio:ai:files',
   assistantPlan: 'studio:assistant:plan',
   assistantApply: 'studio:assistant:apply',
+  diagnosticsLogs: 'studio:diagnostics:logs',
+  diagnosticsOpenLogs: 'studio:diagnostics:open-logs',
+  diagnosticsReport: 'studio:diagnostics:report',
+  updatesCheck: 'studio:updates:check',
+  updatesOpen: 'studio:updates:open',
   eventProgress: 'studio:event:progress'
 } as const

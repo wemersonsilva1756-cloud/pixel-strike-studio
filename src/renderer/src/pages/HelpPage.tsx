@@ -160,7 +160,7 @@ export function HelpPage(): React.JSX.Element {
             </dl>
           </Card>
 
-          <Card title="O que está funcionando agora" actions={<Badge icon={ListChecks}>Etapas 1 a 9</Badge>}>
+          <Card title="O que está funcionando agora" actions={<Badge icon={ListChecks}>10 etapas concluídas</Badge>}>
             <ul className="space-y-1.5 text-xs leading-relaxed text-ink-300">
               <li>· Criar, abrir, duplicar e remover projetos</li>
               <li>· Pastas do projeto organizadas automaticamente</li>
@@ -176,6 +176,7 @@ export function HelpPage(): React.JSX.Element {
               <li>· Gerar efeitos animados e habilidades com script para a Godot</li>
               <li>· Criar itens com atributos e tabelas de drops validadas em 100%</li>
               <li>· Usar a sua chave de IA para gerar criações com prévia e confirmação</li>
+              <li>· Instalar pelo instalador do Windows e verificar atualizações</li>
               <li>· Preferências de pasta e de retenção de backups</li>
             </ul>
             <div className="mt-3">

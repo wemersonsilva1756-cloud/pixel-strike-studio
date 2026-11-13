@@ -1,12 +1,18 @@
 import {
+  ClipboardList,
   Database,
+  Download,
+  FileText,
   FolderOpen,
   GraduationCap,
   HardDriveDownload,
   Info,
+  RefreshCw,
   ShieldCheck,
   SlidersHorizontal
 } from 'lucide-react'
+import { useState } from 'react'
+import type { UpdateCheckResult } from '@shared/updates'
 import { useApp } from '../state/store'
 import { Badge, Button, Card, Note, PageHeader } from '../components/ui'
 
@@ -14,6 +20,9 @@ const BACKUP_OPTIONS = [5, 10, 20, 50]
 
 export function SettingsPage(): React.JSX.Element {
   const { settings, paths, chooseWorkspace, updateSettings, resetOnboarding, notify } = useApp()
+  const [checking, setChecking] = useState(false)
+  const [update, setUpdate] = useState<UpdateCheckResult | null>(null)
+  const [logs, setLogs] = useState<{ path: string; text: string; bytes: number } | null>(null)
 
   async function openDataFolder(): Promise<void> {
     try {
@@ -24,6 +33,53 @@ export function SettingsPage(): React.JSX.Element {
         'Não foi possível abrir a pasta',
         error instanceof Error ? error.message : undefined
       )
+    }
+  }
+
+  async function checkUpdates(): Promise<void> {
+    setChecking(true)
+    try {
+      const result = await window.studio.updates.check()
+      setUpdate(result)
+      if (result.status === 'disponivel') {
+        notify('info', 'Atualização disponível', result.message)
+      } else if (result.status === 'atualizado') {
+        notify('sucesso', 'Você está atualizado', result.message)
+      } else {
+        notify('info', 'Verificação concluída', result.message)
+      }
+    } catch (error) {
+      notify(
+        'erro',
+        'Não foi possível verificar atualizações',
+        error instanceof Error ? error.message : undefined
+      )
+    } finally {
+      setChecking(false)
+    }
+  }
+
+  async function openRelease(url: string): Promise<void> {
+    try {
+      await window.studio.updates.openPage(url)
+    } catch (error) {
+      notify('erro', 'Não foi possível abrir o link', error instanceof Error ? error.message : undefined)
+    }
+  }
+
+  async function loadLogs(): Promise<void> {
+    try {
+      setLogs(await window.studio.diagnostics.logs())
+    } catch (error) {
+      notify('erro', 'Não foi possível ler o log', error instanceof Error ? error.message : undefined)
+    }
+  }
+
+  async function openLogs(): Promise<void> {
+    try {
+      await window.studio.diagnostics.openLogsFolder()
+    } catch (error) {
+      notify('erro', 'Não foi possível abrir a pasta', error instanceof Error ? error.message : undefined)
     }
   }
 
@@ -148,6 +204,77 @@ export function SettingsPage(): React.JSX.Element {
         </Card>
 
         <Card
+          title="Atualizações"
+          description="Consulta as versões publicadas do Studio no GitHub. Nada é baixado automaticamente."
+          actions={<Badge icon={RefreshCw}>GitHub Releases</Badge>}
+        >
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" icon={RefreshCw} loading={checking} onClick={() => void checkUpdates()}>
+                Verificar atualizações
+              </Button>
+              <Badge tone="neutral">v{paths?.appVersion ?? '0.9.0'}</Badge>
+            </div>
+
+            {update ? (
+              <div className="space-y-2 rounded-xl border border-base-800 bg-base-950/50 p-3">
+                <p className="text-xs text-ink-200">{update.message}</p>
+                {update.latest?.notes ? (
+                  <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-lg border border-base-800 bg-base-950 p-2 text-[11px] leading-relaxed text-ink-400">
+                    {update.latest.notes}
+                  </pre>
+                ) : null}
+                {update.status === 'disponivel' && update.latest ? (
+                  <Button
+                    size="sm"
+                    icon={Download}
+                    onClick={() =>
+                      void openRelease(update.latest?.assetUrl ?? update.latest?.pageUrl ?? '')
+                    }
+                  >
+                    Abrir página de download
+                  </Button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-[11px] text-ink-500">
+                A verificação é opcional e não envia nada do seu projeto — só consulta a lista de
+                versões públicas do repositório.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card
+          title="Logs e diagnóstico"
+          description="O Studio registra falhas em um arquivo local para facilitar o suporte."
+          actions={<Badge icon={FileText}>Local</Badge>}
+        >
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" icon={ClipboardList} onClick={() => void loadLogs()}>
+                Ver últimas linhas
+              </Button>
+              <Button variant="ghost" icon={FolderOpen} onClick={() => void openLogs()}>
+                Abrir pasta de logs
+              </Button>
+            </div>
+            {logs ? (
+              <div className="space-y-1">
+                <p className="font-mono text-[11px] break-all text-ink-500">{logs.path}</p>
+                <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-base-800 bg-base-950 p-2 text-[11px] leading-relaxed text-ink-300">
+                  {logs.text || 'O log está vazio: nenhuma falha registrada.'}
+                </pre>
+              </div>
+            ) : null}
+            <Note>
+              O log guarda apenas mensagens de erro do aplicativo, versão e horário. Nenhuma chave de
+              IA, texto de projeto ou conteúdo de arquivo é registrado.
+            </Note>
+          </div>
+        </Card>
+
+        <Card
           title="Sobre esta versão"
           description="Informações técnicas do aplicativo."
           actions={<Badge icon={Info}>v{paths?.appVersion ?? '0.1.0'}</Badge>}
@@ -159,7 +286,11 @@ export function SettingsPage(): React.JSX.Element {
               · Comunicação entre interface e sistema isolada: a interface não tem acesso direto ao
               disco ou ao Node.
             </li>
-            <li>· Etapa 1 concluída: estrutura, navegação, projetos, banco de dados e backups.</li>
+            <li>
+              · Etapas 1 a 9 concluídas: projetos, Godot, personagens, animações, mapas, armas,
+              efeitos, habilidades, itens, drops e central de IA.
+            </li>
+            <li>· Etapa 10: revisão de estabilidade, log local, atualizações e instalador.</li>
           </ul>
           <div className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-3 py-2.5">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-400" aria-hidden />

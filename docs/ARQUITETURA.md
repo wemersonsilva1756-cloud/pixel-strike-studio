@@ -61,6 +61,9 @@ Regras que sustentam essa divisão:
 | `src/main/core/ai.ts` | Provedores, chave cifrada, chat, código, imagem e áudio |
 | `src/main/core/assistant.ts` | Plano do assistente: prompt, validação e aplicação |
 | `src/shared/ai.ts` | Catálogo de provedores, capacidades e tipos do assistente |
+| `src/main/core/updates.ts` | Consulta de versões publicadas no GitHub |
+| `src/shared/updates.ts` | Tipos de atualização e comparação de versões |
+| `src/main/core/diagnostics.ts` | Log local rotativo de falhas |
 | `src/main/core/png.ts` | Codificador PNG RGBA com `zlib` (sem dependências externas) |
 | `src/main/smoke.ts` | Teste automático em duas fases (com recarga da janela) |
 | `src/main/core/settings-store.ts` | Preferências em tabela chave/valor |
@@ -136,6 +139,8 @@ arbitrário da interface: o núcleo sempre resolve os caminhos a partir do banco
 | `studio:ai:test` | chamada mínima real ao provedor |
 | `studio:ai:text` / `code` / `image` / `audio` | gerações reais |
 | `studio:assistant:plan` / `apply` | plano validado e criação confirmada |
+| `studio:diagnostics:logs` / `open-logs` / `report` | leitura, pasta e registro de erro |
+| `studio:updates:check` / `open` | consulta o GitHub e abre o link do repositório |
 | `studio:event:progress` | evento (main → renderer) de operações longas |
 
 `studio:app:smoke-ready` é o único canal `send` (sem resposta), usado pelo teste
@@ -414,6 +419,28 @@ O mapa é uma grade de tiles com dados que a Godot entende de verdade.
   a lista do que foi criado e do que foi ignorado, com o motivo.
 - Código, imagens e áudios ficam em `ia/codigo/`, `ia/imagens/` e `ia/audio/` e entram
   na exportação para a Godot.
+
+## Estabilidade, atualizações e instalador (etapa 10)
+
+- `diagnostics.ts` grava eventos e erros em `<pasta de dados>/logs/app.log`, com rotação
+  em 1 MB para `app.anterior.log`. O log nunca recebe chaves, textos de projeto ou
+  conteúdo de arquivo: só versão, horário, escopo e mensagem.
+- `src/main/index.ts` captura `uncaughtException` e `unhandledRejection` e registra no
+  log; falhas não tratadas deixam de derrubar o aplicativo em silêncio.
+- `ErrorBoundary` (interface) impede que uma tela quebrada derrube o app inteiro:
+  mostra uma mensagem clara, registra o erro e oferece recarregar. Também há captura de
+  `window.error` e `unhandledrejection` no `main.tsx` do renderer.
+- `updates.ts` consulta `https://api.github.com/repos/<repo>/releases/latest`, compara a
+  tag com a versão instalada (`compareVersions`, tolerante a `v` e a sufixos) e devolve
+  `atualizado`, `disponivel`, `sem-publicacao` ou `erro` — nunca lança exceção para a
+  interface, exceto em falhas inesperadas.
+- O canal `studio:updates:open` só aceita endereços dentro do repositório oficial antes
+  de chamar `shell.openExternal`.
+- O instalador usa `electron-builder.yml`: NSIS por usuário, atalhos, ícone em
+  `build/icon.ico` (gerado por `scripts/gerar-icone.ts` com o codificador PNG do próprio
+  Studio) e `asarUnpack` para o binário nativo do `@libsql`.
+- A build de verificação é `dist/win-unpacked/`, testada com
+  `--smoke-test`; o instalador sai em `dist/PixelStrikeStudio-Setup-<versão>.exe`.
 
 ## Teste automático do Electron (`npm run smoke`)
 

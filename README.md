@@ -4,7 +4,7 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
-> **Estado atual: Etapas 1 a 9 de 10 concluídas e testadas.**
+> **Versão 1.0.0 — as 10 etapas concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
 > transparentes e ficha JSON, monta **animações com linha do tempo, FPS e
@@ -68,7 +68,9 @@ para quem está começando.
 | Preferências (pasta de projetos, retenção de backups) | Funcionando |
 | Tutoriais e glossário em português | Funcionando |
 | Exportar cenas geradas pelos módulos restantes | Junto com a etapa 10 |
-| Instalador para Windows e sistema de atualização | Etapa 10 |
+| Instalador Windows (NSIS) gerado com electron-builder | Funcionando |
+| Verificação de atualizações pelo GitHub Releases | Funcionando |
+| Log local de falhas e proteção contra tela quebrada | Funcionando |
 
 A tela **Etapas do desenvolvimento** (no menu lateral) mostra o plano completo e o
 que está concluído.
@@ -428,7 +430,7 @@ conferir a versão instalada — o Studio nunca abre a Godot sozinho.
 
 ```bash
 npm run typecheck   # verificação de tipos (interface + processo principal)
-npm run test:core   # 286 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens, drops e IA
+npm run test:core   # 297 verificações: banco, projetos, arquivos, Godot, sprites, animações, mapas, armas, efeitos, habilidades, itens, drops, IA, atualizações e logs
 npm run smoke       # compila e abre o Electron verificando IPC, banco e interface
 ```
 
@@ -439,8 +441,9 @@ o app), confere que o projeto continua aberto, abre as páginas de arquivos,
 personagens, animações e mapas pelo menu e remove o projeto. Tudo dentro do Electron, sem tocar nos seus
 dados.
 
-Resultado da última execução desta versão: **typecheck OK, 286/286 verificações do
-núcleo, build OK, smoke OK**.
+Resultado da última execução desta versão: **typecheck OK, 297/297 verificações do
+núcleo, build OK, smoke OK** — inclusive rodando o smoke dentro do aplicativo já
+empacotado (`dist/win-unpacked/Pixel Strike Studio.exe`).
 
 ---
 
@@ -465,6 +468,8 @@ src/
       drops.ts          tabelas de drops: validação de 100%, script e planilha
       ai.ts             provedores, chave cifrada, texto, código, imagem e áudio
       assistant.ts      plano do assistente: valida e aplica com confirmação
+      updates.ts        consulta de versões publicadas no GitHub
+      diagnostics.ts    log local rotativo de falhas
       png.ts            codificador PNG RGBA sem dependências
       settings-store.ts preferências locais
       activity.ts       histórico de ações
@@ -513,11 +518,46 @@ Detalhes de arquitetura, esquema do banco e contrato de IPC em
 
 ---
 
-## Próxima etapa
+## Instalador para Windows
 
-**Etapa 10 — Testes, estabilidade e empacotamento:** revisão das validações reais,
-testes de recursos, correções finais, instalador para Windows, sistema de atualização e
-documentação completa.
+O instalador é gerado com o electron-builder, sem assinatura de código:
 
-Nada da Etapa 10 começa antes de as etapas 1 a 9 estarem estáveis — e elas estão
-testadas nesta versão.
+```bash
+npm run icon      # gera build/icon.png e build/icon.ico em pixel art
+npm run pack:win  # pasta pronta para testar: dist/win-unpacked/
+npm run dist:win  # instalador: dist/PixelStrikeStudio-Setup-1.0.0.exe
+```
+
+O instalador NSIS permite escolher a pasta, cria atalhos na área de trabalho e no menu
+Iniciar e **não apaga os seus dados ao desinstalar** (banco, projetos, backups e chaves
+continuam em `%APPDATA%\Pixel Strike Studio`). Detalhes em
+[`docs/INSTALADOR.md`](docs/INSTALADOR.md).
+
+O aplicativo empacotado foi verificado: `dist/win-unpacked/Pixel Strike Studio.exe
+--smoke-test` passa por todas as checagens, incluindo o banco SQLite nativo.
+
+## Atualizações
+
+Em **Configurações → Atualizações**, o Studio consulta a última versão publicada no
+GitHub e compara com a instalada. Ele mostra a versão, as notas e o link do instalador;
+**não baixa nem instala sozinho**. Sem release publicada, a mensagem diz exatamente isso.
+
+## Logs e diagnóstico
+
+Falhas do processo principal, promessas rejeitadas e erros de renderização vão para
+`<pasta de dados>\logs\app.log` (rotação em 1 MB). A tela **Configurações → Logs e
+diagnóstico** mostra o caminho e as últimas linhas. Nenhuma chave, texto de projeto ou
+conteúdo de arquivo é registrado.
+
+## Limitações conhecidas desta versão
+
+- O instalador **não é assinado** (sem certificado de código), então o Windows mostrará
+o aviso do SmartScreen no primeiro uso.
+- A atualização é **verificada e baixada manualmente**: não há atualização silenciosa
+nem feed publicado até o momento.
+- As chamadas de IA foram testadas contra um servidor local que simula a API; **nenhum
+provedor real foi chamado** nesta máquina por falta de chave.
+- Os scripts `.gd` gerados são validados por texto e estrutura, **não compilados** na
+Godot (a engine não está instalada aqui).
+- Personagens, monstros e animações não geram cena `.tscn` pronta; só os mapas.
+- Áudio de jogo (efeitos sonoros) continua fora do escopo: a IA gera voz, não sfx.

@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, safeStorage } from 'electron'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { pathToFileURL } from 'node:url'
-import { initializeCore, shutdownCore, type SecretStore } from './core'
+import { initializeCore, logError, shutdownCore, type SecretStore } from './core'
 import { registerIpcHandlers, unregisterIpcHandlers } from './ipc'
 import { hardenWindow } from './security'
 import { runSmokeTest } from './smoke'
@@ -16,6 +16,24 @@ import { runSmokeTest } from './smoke'
 
 const isSmokeTest = process.argv.includes('--smoke-test')
 const devServerUrl = process.env['ELECTRON_RENDERER_URL']
+
+// Falhas não tratadas vão para o log local em vez de derrubar o aplicativo sem
+// explicação. O log fica em <pasta de dados>/logs/app.log.
+process.on('uncaughtException', (error) => {
+  logError('processo', error)
+  if (app.isReady() && !isSmokeTest) {
+    dialog.showErrorBox(
+      'O Pixel Strike Studio encontrou um problema',
+      `O erro foi registrado em logs/app.log dentro da pasta de dados.\n\n${
+        error instanceof Error ? error.message : String(error)
+      }`
+    )
+  }
+})
+
+process.on('unhandledRejection', (reason) => {
+  logError('promessa', reason)
+})
 
 app.setName('Pixel Strike Studio')
 app.setAppUserModelId('com.pixelstrike.studio')

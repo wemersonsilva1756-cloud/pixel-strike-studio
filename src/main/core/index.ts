@@ -12,6 +12,8 @@ import { configureSkills } from './skills'
 import { configureItems } from './items'
 import { configureDrops } from './drops'
 import { configureAi, type SecretStore } from './ai'
+import { configureDiagnostics } from './diagnostics'
+import { configureUpdates } from './updates'
 import { ensureDir } from './filesystem'
 
 export * from './database'
@@ -36,6 +38,8 @@ export * from './items'
 export * from './drops'
 export * from './ai'
 export * from './assistant'
+export * from './updates'
+export * from './diagnostics'
 
 /**
  * Inicializa o núcleo local (banco de dados + serviços).
@@ -77,6 +81,8 @@ export async function initializeCore(options: CoreOptions): Promise<void> {
   configureItems({ trashDir })
   configureDrops({ trashDir })
   configureAi({ secretStore: options.secretStore ?? null })
+  configureDiagnostics({ dataDir: options.dataDir, appVersion: options.studioVersion })
+  configureUpdates({ currentVersion: options.studioVersion })
 
   initialized = true
 }
