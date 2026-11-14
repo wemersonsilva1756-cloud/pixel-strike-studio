@@ -36,6 +36,14 @@ planejadas estão implementadas, testadas e publicadas.
 - Proteção contra tela quebrada com opção de recarregar a interface
 - Verificação de atualizações por esta página de Releases (sem instalação automática)
 
+## Integridade do arquivo
+
+| Arquivo | Tamanho | SHA-256 |
+| --- | --- | --- |
+| `PixelStrikeStudio-Setup-1.0.0.exe` | 124.822.384 bytes | `7b16292c1c8653fcf1363f0ac73627a0472006218dee20b621e2aa8a8ad1c42e` |
+
+Para conferir no Windows: `certutil -hashfile PixelStrikeStudio-Setup-1.0.0.exe SHA256`.
+
 ## Instalação
 
 1. Baixe `PixelStrikeStudio-Setup-1.0.0.exe` abaixo.
