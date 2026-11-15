@@ -66,9 +66,10 @@ Requisitos: Windows 10 ou 11, 64 bits.
 
 - O instalador **não é assinado**; o Windows mostrará o aviso do SmartScreen no primeiro
   uso ("Mais informações" → "Executar assim mesmo").
-- A atualização é verificada e baixada manualmente; não há atualização silenciosa. Como
-  este repositório é **privado**, a verificação pública retorna 404 — o Studio avisa e
-  mostra o botão “Abrir página de Releases”. Baixe o instalador por esta página.
+- A atualização é verificada e baixada manualmente; não há atualização silenciosa. O
+  repositório é público, então **Configurações → Atualizações** encontra esta Release e o
+  instalador pelo link. Se o GitHub limitar as consultas (HTTP 403), o Studio avisa e o
+  download continua disponível por esta página.
 - As chamadas de IA foram testadas contra um servidor local que simula a API. Nenhum
   provedor real foi chamado durante os testes automatizados — o primeiro uso real é com a
   sua chave.

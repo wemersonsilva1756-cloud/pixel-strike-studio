@@ -542,10 +542,10 @@ Em **Configurações → Atualizações**, o Studio consulta a última versão p
 GitHub e compara com a instalada. Ele mostra a versão, as notas e o link do instalador;
 **não baixa nem instala sozinho**.
 
-A verificação usa a API **pública** do GitHub. Enquanto o repositório for **privado**, ela
-responde 404 e o Studio informa que nenhuma versão foi encontrada sem login, com um botão
-que abre a página de Releases para baixar o instalador manualmente. Para a verificação
-automática funcionar, o repositório precisa ser público.
+A verificação usa a API **pública** do GitHub. O repositório é público, então a tela
+encontra a Release mais recente (`v1.0.0`) e mostra a versão, as notas e o link do
+instalador. Se o GitHub limitar as consultas ou a rede falhar, o Studio avisa e mantém o
+botão que abre a página de Releases.
 
 ## Logs e diagnóstico
 
@@ -559,8 +559,8 @@ conteúdo de arquivo é registrado.
 - O instalador **não é assinado** (sem certificado de código), então o Windows mostrará
 o aviso do SmartScreen no primeiro uso.
 - A atualização é **verificada e baixada manualmente**: não há atualização silenciosa.
-- Como o repositório é **privado**, a verificação pública de versões retorna 404; a tela
-  mostra o aviso e o atalho para a página de Releases.
+- A verificação de versões depende da API pública do GitHub. Se ela estiver limitada
+  (HTTP 403) ou fora do ar, a tela avisa e você baixa o instalador pela página de Releases.
 - As chamadas de IA foram testadas contra um servidor local que simula a API; **nenhum
 provedor real foi chamado** nesta máquina por falta de chave.
 - Os scripts `.gd` gerados são validados por texto e estrutura, **não compilados** na
