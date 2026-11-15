@@ -14,6 +14,7 @@
     "test:core": "tsx tests/core.test.ts",
     "smoke": "electron-vite build && electron . --smoke-test",
     "icon": "tsx scripts/gerar-icone.ts",
+    "demo:atualizacao": "tsx scripts/servidor-demo-atualizacao.ts",
     "pack:win": "npm run build && electron-builder --win --dir",
     "dist:win": "npm run build && electron-builder --win nsis"
   },

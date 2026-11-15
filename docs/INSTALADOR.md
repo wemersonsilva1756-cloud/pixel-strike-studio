@@ -83,6 +83,11 @@ certificado no repositório.
 A verificação usa a API pública de releases do GitHub. Nenhum dado do projeto é
 enviado.
 
+> **Ver a tela de atualização sem publicar versão nova:** rode `npm run demo:atualizacao` e,
+> em outro terminal, `PIXEL_STRIKE_UPDATE_ENDPOINT=http://127.0.0.1:4599/releases/latest npx electron .`.
+> O Studio passa a consultar um servidor local que anuncia uma versão 1.0.1 fictícia — nada é
+> publicado no GitHub e a consulta real continua sendo a padrão sem essa variável.
+
 > **Se aparecer “nenhuma versão publicada”:** a API pública responde 404 quando o
 > repositório está privado ou quando não existe Release publicada. O Studio mostra o
 > aviso e o botão “Abrir página de Releases”. Este repositório é público e a Release

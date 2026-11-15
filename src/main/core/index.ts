@@ -82,7 +82,14 @@ export async function initializeCore(options: CoreOptions): Promise<void> {
   configureDrops({ trashDir })
   configureAi({ secretStore: options.secretStore ?? null })
   configureDiagnostics({ dataDir: options.dataDir, appVersion: options.studioVersion })
-  configureUpdates({ currentVersion: options.studioVersion })
+  configureUpdates({
+    currentVersion: options.studioVersion,
+    // Uso apenas em demonstração/teste local: permite apontar a consulta de
+    // atualizações para um servidor falso (ver scripts/servidor-demo-atualizacao.ts).
+    ...(process.env['PIXEL_STRIKE_UPDATE_ENDPOINT']
+      ? { endpoint: process.env['PIXEL_STRIKE_UPDATE_ENDPOINT'] }
+      : {})
+  })
 
   initialized = true
 }
