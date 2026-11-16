@@ -1,6 +1,7 @@
 {
   "name": "pixel-strike-studio",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Pixel Strike Studio - plataforma de criacao de jogos 2D em pixel art com assistencia de IA",
   "main": "./out/main/index.js",
   "author": "Pixel Strike Studio",

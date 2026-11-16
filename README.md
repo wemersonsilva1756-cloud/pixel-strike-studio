@@ -4,6 +4,9 @@ Plataforma desktop para criação de jogos 2D em pixel art, com editores visuais
 assistência de inteligência artificial. Interface em português do Brasil, pensada
 para quem está começando.
 
+**Licença:** MIT — você pode usar, modificar e distribuir este projeto livremente,
+desde que mantenha o aviso de copyright. Veja o arquivo [LICENSE](LICENSE).
+
 > **Versão 1.0.0 — as 10 etapas concluídas e testadas.**
 > Nesta versão o Studio gerencia projetos, arquivos, banco de dados local, backups,
 > integra a Godot 4, gera **personagens e monstros em pixel art** com sprites
@@ -567,3 +570,14 @@ provedor real foi chamado** nesta máquina por falta de chave.
 Godot (a engine não está instalada aqui).
 - Personagens, monstros e animações não geram cena `.tscn` pronta; só os mapas.
 - Áudio de jogo (efeitos sonoros) continua fora do escopo: a IA gera voz, não sfx.
+
+## Licença
+
+Este projeto é distribuído sob a licença **MIT**. Você pode usar, copiar, modificar,
+mesclar, publicar, distribuir, sublicenciar e vender o software, desde que o aviso de
+copyright e esta permissão apareçam em todas as cópias ou partes substanciais dele.
+
+O software é fornecido **sem garantia** de qualquer tipo. O texto completo está em
+[LICENSE](LICENSE).
+
+Copyright (c) 2026 Wemerson Silva.
