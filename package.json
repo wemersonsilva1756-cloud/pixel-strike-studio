@@ -5,7 +5,6 @@
   "description": "Pixel Strike Studio - plataforma de criacao de jogos 2D em pixel art com assistencia de IA",
   "main": "./out/main/index.js",
   "author": "Pixel Strike Studio",
-  "license": "UNLICENSED",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
@@ -31,7 +30,6 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.0",
     "electron": "^45.2.3",
-    "electron-builder": "^26.0.12",
     "electron-builder": "^26.18.0",
     "electron-vite": "^6.0.0",
     "react": "^19.3.1",
