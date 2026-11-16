@@ -3,6 +3,9 @@
 Primeira versão completa do estúdio de jogos 2D em pixel art para Windows. As 10 etapas
 planejadas estão implementadas, testadas e publicadas.
 
+**Repositório:** [github.com/wemersonsilva1756-cloud/pixel-strike-studio](https://github.com/wemersonsilva1756-cloud/pixel-strike-studio)
+— código-fonte, README completo, documentação de arquitetura e histórico de commits.
+
 ## O que está incluído
 
 **Base do estúdio**
@@ -76,6 +79,19 @@ Requisitos: Windows 10 ou 11, 64 bits.
 - Scripts `.gd` são validados por estrutura, não compilados na Godot.
 - Personagens, monstros e animações não geram cena `.tscn`; só os mapas.
 - Sem efeitos sonoros de jogo (a IA gera voz, não sfx).
+
+## Licença
+
+Este projeto é open source sob a licença **MIT**: use, copie, modifique, distribua e venda
+livremente, desde que o aviso de copyright seja mantido. O texto completo está em
+[LICENSE](https://github.com/wemersonsilva1756-cloud/pixel-strike-studio/blob/main/LICENSE).
+
+```
+MIT License · Copyright (c) 2026 Wemerson Silva
+```
+
+O código-fonte está em
+[github.com/wemersonsilva1756-cloud/pixel-strike-studio](https://github.com/wemersonsilva1756-cloud/pixel-strike-studio).
 
 ## Desinstalação
 
